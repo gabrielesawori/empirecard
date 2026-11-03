@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for empirecard on 2026-11-03T15:42:02Z
+# fly.toml app configuration file generated for empirecard on 2026-11-03T16:45:43Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'empirecard'
-primary_region = 'sin'
+primary_region = 'ams'
 
 [build]
 
