@@ -1,0 +1,64 @@
+import { BATTLE_SPELLS } from './spells.js';
+import { HEROES } from './heroes.js';
+
+export const UPCOMING_HEROES = {};
+
+export function createInterface({ icon, escape, heroPills }) {
+  const avatar = (profile, size = '') => `<span class="profile-avatar ${size}">${profile.avatar ? `<img src="${escape(profile.avatar)}" alt="Foto profil ${escape(profile.name)}">` : `<span>${escape(profile.name.slice(0, 1).toUpperCase())}</span>`}</span>`;
+  const back = () => `<button class="page-back" data-page="home">${icon('arrow')} Menu utama</button>`;
+  const heading = (kicker, title, description) => `<div class="page-heading">${back()}<p class="eyebrow">${kicker}</p><h1>${title}</h1><p class="subtitle">${description}</p></div>`;
+  const soon = text => `<span class="soon-tag">${text || 'COMING SOON'}</span>`;
+
+  function home({ profile, heroId, bgmEnabled }) {
+    const hero = HEROES[heroId];
+    const tiles = [
+      ['heroes', 'cards', 'Koleksi hero', 'Kenali kekuatanmu', `${String(Object.keys(HEROES).length).padStart(2, '0')} TERSEDIA`],
+      ['points', 'coin', 'Battle Point', 'Bekal perjalananmu', 'SEGERA HADIR'],
+      ['events', 'calendar', 'Event', 'Kisah berikutnya', 'COMING SOON'],
+      ['leaderboard', 'trophy', 'Leaderboard', 'Para legenda arena', 'WIN POINT'],
+      ['settings', 'settings', 'Setting', 'Atur suasana bermain', bgmEnabled ? 'BGM ON' : 'BGM OFF'],
+    ];
+    return `<section class="menu-heading"><div><p class="eyebrow"><span class="gold-line"></span> SELAMAT DATANG DI EMPIRE CARD</p><h1>Perjalananmu dimulai di sini.</h1></div><span class="chapter-label">THE CARD CHRONICLES <i>✦</i></span></section>
+      <div class="menu-layout"><aside class="commander-panel"><button class="commander-profile" data-page="profile">${avatar(profile)}<span><small>PROFIL PETARUNG</small><strong>${escape(profile.name)}</strong><em>PROFIL LOKAL ${icon('arrow')}</em></span></button><div class="commander-divider"></div><div class="rank-emblem">${icon('crown')}<i>✦</i></div><span class="eyebrow">PERINGKAT SAAT INI</span><h2>Unranked</h2>${soon('RANKED · COMING SOON')}<p>Setiap legenda dimulai<br>dengan duel pertamanya.</p><div class="commander-stats"><div><b>—</b><span>WINRATE</span></div><div><b>—</b><span>WIN POINT</span></div></div><button class="text-button account-entry" data-page="login">${icon('user')} Login / Daftar ${icon('arrow')}</button></aside>
+      <section class="menu-spotlight"><img class="spotlight-art" src="${hero.image}" alt="${hero.name}"><div class="spotlight-shade"></div><div class="spotlight-content"><span class="live-label"><i></i> DUEL MULTIPLAYER · 1 VS 1</span><h2>Arena menunggu.<br><em>Tentukan takdirmu.</em></h2><p>Satu hero. Tiga pilihan.<br>Baca langkah rival dan menangkan counter.</p><button class="button primary menu-play" data-page="matchmaking">${icon('sword')} Masuk matchmaking ${icon('arrow')}</button><button class="spotlight-guide" data-nav="rules">Pelajari cara bermain <span>↗</span></button></div><div class="spotlight-bottom"><span><small>HERO PILIHANMU</small><strong>${hero.name}</strong><em>${hero.role} · ${hero.hp} HP / ${hero.defense} DEF</em></span>${heroPills(heroId)}</div><span class="spotlight-number" aria-hidden="true">0${Object.keys(HEROES).indexOf(heroId) + 1}</span></section></div>
+      <section class="menu-destinations" aria-label="Menu utama">${tiles.map(([page, symbol, title, description, label], index) => `<button class="destination-tile tile-${page}" data-page="${page}"><span class="destination-top">${icon(symbol)}<span>0${index + 1}</span></span><h2>${title}</h2><p>${description}</p><span class="destination-bottom"><small>${label}</small>${icon('arrow')}</span></button>`).join('')}</section>`;
+  }
+
+  function collection() {
+    const available = Object.values(HEROES);
+    const upcoming = Object.values(UPCOMING_HEROES);
+    const count = number => String(number).padStart(2, '0');
+    return `${heading('THE HERO ARCHIVE', 'Temukan legendamu.', 'Pilih kartu untuk melihat detail hero, skill utama, dan ultimate yang tersedia.')}
+      <div class="collection-toolbar"><span>SEMUA HERO <b>${count(available.length + upcoming.length)}</b></span><span>${available.length} tersedia untuk dimainkan${upcoming.length ? ` · ${upcoming.length} segera hadir` : ''}</span></div>
+      <section class="hero-library">
+        ${available.map((hero, index) => `<button class="library-card" data-action="hero-details" data-hero="${hero.id}"><div class="library-art"><img src="${hero.image}" alt="${hero.name}"><span class="owned-label">${icon('check')} TERSEDIA</span></div><div class="library-info"><span class="eyebrow">${count(index + 1)} / ${hero.role}</span><h2>${hero.name}</h2><p>${hero.title}</p><span class="library-stats">${icon('heart')} ${hero.hp} HP ${icon('shield')} ${hero.defense} DEF ${icon('arrow')}</span></div></button>`).join('')}
+        ${upcoming.map((hero, index) => `<button class="library-card locked-library-card" data-action="upcoming-hero" data-hero="${hero.id}"><div class="library-art upcoming-art"><span class="upcoming-mark">${hero.name[0]}</span><span class="upcoming-sigil">◇</span><span class="owned-label">${icon('lock')} BELUM DIMILIKI</span></div><div class="library-info"><span class="eyebrow">${count(available.length + index + 1)} / ${hero.role}</span><h2>${hero.name}</h2><p>Hadir di update hero berikutnya</p><span class="library-stats">${icon('heart')} ${hero.hp} HP ${icon('shield')} ${hero.defense} DEF ${icon('arrow')}</span></div></button>`).join('')}
+      </section><div class="spell-library-heading"><span class="eyebrow">BATTLE SPELL CARD</span><h2>Bekal untuk setiap duel.</h2><p>Pilih satu dari enam kartu bantuan di matchmaking atau lobby.</p></div><section class="spell-library" aria-label="Koleksi battle spell">${Object.values(BATTLE_SPELLS).map(spell => `<button class="spell-library-card" data-action="spell-details" data-spell="${spell.id}"><img src="${spell.image}" alt="Kartu ${spell.name}" loading="lazy"><h3>${spell.name}</h3><p>${spell.summary}</p></button>`).join('')}</section><p class="page-footnote">Semua hero terbuka untuk akun selama pengujian. ${Object.values(HEROES).map(hero => hero.name).join(', ')} dapat dimainkan pada versi ini.</p>`;
+  }
+
+  function profilePage({ profile }) {
+    return `${heading('YOUR LEGACY', 'Profil petarung.', 'Nama dan foto profil sementara disimpan di perangkat ini.')}<div class="profile-layout"><section class="profile-identity-panel">${avatar(profile, 'avatar-large')}<label class="button secondary upload-avatar" for="avatar-file">${icon('camera')} Ganti foto profil</label><input id="avatar-file" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp"><p class="upload-note">JPG, PNG, atau WebP · Maks. 2 MB</p><h2>${escape(profile.name)}</h2><span class="profile-kind">PROFIL LOKAL</span><div class="profile-id"><span>ID SEMENTARA</span><button data-action="copy-profile-id">${escape(profile.id)} ${icon('copy')}</button></div></section><section class="profile-details-panel"><div class="profile-panel-heading"><div><span class="eyebrow">IDENTITAS PEMAIN</span><h2>Namamu di arena.</h2></div>${icon('user')}</div><form id="profile-form"><label for="profile-name">NAMA PEMAIN</label><input id="profile-name" name="name" maxlength="20" value="${escape(profile.name)}" required autocomplete="nickname"><button class="button primary" type="submit">Simpan nama ${icon('check')}</button></form><div class="profile-metrics"><div><span>WINRATE</span><b>— <small>%</small></b><p>Menunggu sistem akun</p></div><div><span>WIN POINT</span><b>— <small>WP</small></b><p>Menang +15 · Kalah −5</p></div><div><span>PERINGKAT</span><b class="rank-text">Unranked</b><p>Ranked coming soon</p></div></div><div class="account-notice">${icon('lock')}<div><strong>Belum ada akun yang terhubung.</strong><p>Login, registrasi, dan statistik akun tersedia pada tahap berikutnya.</p></div><button class="button secondary" data-page="login">Login / Daftar</button></div><button class="logout-preview" disabled>Log Out <span>Belum login</span></button></section></div>`;
+  }
+
+  function settings({ bgmEnabled }) {
+    return `${heading('MAKE IT YOURS', 'Atur suasana arena.', 'Sedikit pengaturan untuk membuat setiap duel terasa milikmu.')}<section class="settings-panel"><div class="setting-row"><span class="setting-icon">${icon('music')}</span><div><h2>Background music</h2><p>Musik latar saat menjelajahi menu dan bertarung.</p></div><button class="toggle-switch ${bgmEnabled ? 'is-on' : ''}" data-action="toggle-bgm" role="switch" aria-checked="${bgmEnabled}" aria-label="Background music"><span></span></button><b id="bgm-label">${bgmEnabled ? 'ON' : 'OFF'}</b></div><div class="setting-note">Pilihan tersimpan di perangkat ini. Musik dimulai setelah interaksi dan berhenti sementara saat tab tidak aktif.</div><div class="setting-row upcoming-setting"><span class="setting-icon">${icon('settings')}</span><div><h2>Pengaturan lainnya</h2><p>Lebih banyak cara untuk menyesuaikan permainanmu.</p></div>${soon()}</div></section>`;
+  }
+
+  function eventPage() {
+    return `${heading('A NEW CHAPTER', 'Event arena.', 'Tantangan dan cerita baru akan hadir di sini.')}<section class="coming-panel"><div class="coming-rings"></div><span class="coming-icon">${icon('calendar')}</span>${soon()}<h2>Kisah berikutnya<br>sedang dipersiapkan.</h2><p>Belum ada event yang berlangsung.<br>Sambil menunggu, temui rivalmu di arena.</p><button class="button primary" data-page="matchmaking">${icon('sword')} Menuju matchmaking ${icon('arrow')}</button></section>`;
+  }
+
+  function points() {
+    return `${heading('BATTLE POINT', 'Bekal untuk perjalananmu.', 'Satu tempat untuk melihat Battle Point milikmu.')}<section class="points-panel"><div class="points-coin">${icon('coin')}</div><span class="eyebrow">SALDO BATTLE POINT</span><h2>— <small>BP</small></h2>${soon()}<p>Battle Point akan tersedia bersama sistem akun.<br>Cara mendapatkan dan menggunakan BP akan diumumkan kemudian.</p><div class="points-note">${icon('info')} Battle Point (BP) berbeda dari Win Point (WP) pada leaderboard.</div></section>`;
+  }
+
+  function leaderboard() {
+    return `${heading('HALL OF LEGENDS', 'Papan para legenda.', 'Peringkat pemain terdaftar berdasarkan Win Point.')}<div class="leaderboard-summary"><div>${icon('trophy')}<span>LEADERBOARD <b>WIN POINT</b></span></div><span class="score-rule win">MENANG <b>+15 WP</b></span><span class="score-rule loss">KALAH <b>−5 WP</b></span></div><section class="leaderboard-panel"><div class="leaderboard-table" role="table" aria-label="Leaderboard pemain"><div role="row" class="leaderboard-columns"><span role="columnheader">POSISI</span><span role="columnheader">PEMAIN</span><span role="columnheader">WINRATE</span><span role="columnheader">WIN POINT</span></div></div><div class="leaderboard-empty">${icon('trophy')}<h2>Tempat untuk legenda berikutnya.</h2><p>Belum ada pemain terdaftar.<br>Leaderboard akan aktif bersama sistem akun.</p>${soon()}</div></section><p class="page-footnote">Sistem ranked terpisah dari leaderboard dan masih coming soon.</p>`;
+  }
+
+  function auth({ register = false }) {
+    return `<section class="auth-layout"><div class="auth-art"><img src="${HEROES.strom.image}" alt="STROM FIST"><div><span class="eyebrow">EMPIRE CARD</span><h1>Sebuah nama.<br>Sebuah legenda.</h1><p>Perjalanan panjang dimulai dari satu kartu.</p></div></div><div class="auth-panel">${back()}<span class="eyebrow">${register ? 'JOIN THE ARENA' : 'WELCOME BACK'}</span><h2>${register ? 'Mulai legendamu.' : 'Kembali ke arena.'}</h2><div class="auth-tabs"><button class="${register ? '' : 'active'}" data-page="login">Login</button><button class="${register ? 'active' : ''}" data-page="register">Registrasi</button></div><div class="auth-notice">${icon('info')}<span>Sistem akun segera hadir. Form ini belum menerima atau menyimpan data akun.</span></div><form class="auth-form" aria-label="${register ? 'Registrasi' : 'Login'} belum aktif"><fieldset disabled>${register ? '<label for="account-username">USERNAME</label><input id="account-username" type="text" placeholder="Nama yang dikenal di arena">' : ''}<label for="account-email">EMAIL</label><input id="account-email" type="email" placeholder="nama@email.com" autocomplete="off"><label for="account-password">PASSWORD</label><input id="account-password" type="password" placeholder="••••••••••••" autocomplete="off"><button type="button" class="button primary full">${register ? 'Buat akun' : 'Masuk akun'} · Segera hadir</button></fieldset></form><p class="auth-alternative">Kamu tetap bisa mencoba duel dengan profil lokal.</p><button class="button secondary full" data-page="home">Lanjut ke menu utama ${icon('arrow')}</button></div></section>`;
+  }
+
+  return { home, collection, profile: profilePage, settings, events: eventPage, points, leaderboard, auth, avatar, heading };
+}

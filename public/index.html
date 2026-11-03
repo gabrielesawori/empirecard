@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c1017">
+  <meta name="description" content="Empire Card — pilih hero, letakkan kartu skill tertutup, dan hadapi lawan dalam duel simultan.">
+  <title>Empire Card — Arena Duel</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/hub.css">
+  <link rel="stylesheet" href="/app-shell.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div class="ambient ambient-blue"></div><div class="ambient ambient-gold"></div>
+  <header class="site-header">
+    <a class="brand" href="#home" data-page="home" aria-label="Empire Card, menu utama"><img src="/favicon.svg" alt="" width="42" height="42"><span>EMPIRE<span class="brand-bottom">C A R D</span></span></a>
+    <nav aria-label="Navigasi utama"><button class="nav-link active" data-page="home">Menu utama</button><button class="nav-link" data-page="heroes">Hero</button><button class="nav-link" data-page="leaderboard">Leaderboard</button><button class="nav-link" data-nav="rules">Panduan <span>↗</span></button></nav>
+    <div class="header-end"><button id="header-coin" class="header-coin" data-page="points" aria-label="Battle Coin dan toko"></button><div class="server-status"><i></i><span id="connection-label">Menghubungkan</span></div><button id="header-profile" class="header-profile" data-page="profile" aria-label="Buka profil pemain"></button><span class="version">ALPHA 0.6</span></div>
+  </header>
+  <main id="app" tabindex="-1"><div class="loading">Menyiapkan arena…</div></main>
+  <nav class="bottom-nav" aria-label="Menu aplikasi"><button data-page="home">⌂<span>Home</span></button><button data-page="heroes">◇<span>Hero</span></button><button data-page="matchmaking">⚔<span>Main</span></button><button data-page="friends">♧<span>Teman</span></button><button data-page="profile">♙<span>Profil</span></button></nav>
+  <footer class="site-footer"><span>EMPIRE CARD <span class="footer-divider">/</span> DUA HERO. SATU PEMENANG.</span><span>Dirancang untuk duel <i>✦</i></span></footer>
+  <dialog id="info-dialog"><button class="dialog-close" aria-label="Tutup dialog">×</button><div id="dialog-content"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript><p>Aktifkan JavaScript untuk bermain Empire Card.</p></noscript>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "empire-card",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Duel kartu simultan untuk dua pemain di browser.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check server.mjs && node --check lib/game.mjs && node --check public/app.js && node --check public/heroes.js && node --check public/spells.js && node --check public/interface.js && node --check public/bgm.js && node --check public/audio.js && node --check public/account-ui.js && node --check public/ranks.js && node --check lib/accounts.mjs && node --check lib/store.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}
