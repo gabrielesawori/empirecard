@@ -256,7 +256,7 @@ export function createApp({ now = Date.now, random = Math.random, store = create
     }
     else if (url.pathname === '/api/spell') selectSpell(game, playerId, body.battleSpellId, now());
     else if (url.pathname === '/api/ready') readyPlayer(game, playerId, now());
-    else if (url.pathname === '/api/lock') lockCard(game, playerId, body.skillId, body.round, now(), body.ultimateType);
+    else if (url.pathname === '/api/lock') lockCard(game, playerId, body.skillId, body.round, now(), body.ultimateType, { targetEnergyType: body.targetEnergyType, restoreEnergyType: body.restoreEnergyType });
     else if (url.pathname === '/api/rematch') {
       if (game.players.some(p => !p.bot && ![...sessions.values()].some(s => s.playerId === p.id))) throw new GameError('Lawan sudah keluar. Buat room baru.', 409);
       await settle(game);
@@ -318,7 +318,7 @@ export function createApp({ now = Date.now, random = Math.random, store = create
           if (now() >= botDelays.get(game.code)) {
             const skills = availableSkills(bot);
             const skill = skills[Math.floor(random() * skills.length)];
-            lockCard(game, bot.id, skill.id, game.round, now(), skill.type);
+            lockCard(game, bot.id, skill.id, game.round, now(), skill.type, skill);
             botDelays.delete(game.code);
             broadcast(game);
           }
