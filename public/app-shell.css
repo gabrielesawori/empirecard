@@ -325,3 +325,10 @@ body[data-screen="auth"] .site-header nav,body[data-screen="auth"] .header-end,b
 @media(max-width:380px) {
   .rank-ladder { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+.rank-rewards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; max-width:700px; margin:0 auto 30px; }
+.rank-rewards > div { display:grid; gap:6px; padding:18px 10px; text-align:center; border:1px solid #788ba130; border-radius:10px; background:#111a25; }
+.rank-rewards b { color:var(--gold); font-size:13px; }
+.rank-rewards span { color:#a6d2b9; font-size:12px; }
+.rank-rewards small { color:var(--muted); font-size:11px; }
+@media(max-width:460px) { .rank-rewards { gap:7px; } .rank-rewards span { font-size:10px; } .rank-rewards small { font-size:9px; } }
