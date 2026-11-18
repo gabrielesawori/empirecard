@@ -87,14 +87,20 @@ try {
   await reveal();
   assert.equal(await a.evaluate('document.querySelector(".your-side .face-up img").alt'), 'Ilustrasi Execute');
   assert.equal(await b.evaluate('document.querySelector(".rival-side .face-up img").alt'), 'Ilustrasi Execute');
-  assert.equal(await b.evaluate('Number(document.querySelector(".your-side .hp-row b").textContent)'), 68);
+  assert.equal(await b.evaluate('Number(document.querySelector(".your-side .hp-row b").textContent)'), 85);
   assert.equal(await a.evaluate('Boolean(document.querySelector(".your-side .ultimate-slot.is-inactive"))'), true);
-  advance(5500);
-  await selecting(11);
-  await a.click('[data-skill="dust"]'); await a.click('[data-action="lock"]');
-  await b.click('[data-skill="shadow-burst"]'); await b.click('[data-action="lock"]');
-  await a.wait('document.querySelector(".counting")');
-  advance(4000);
+  for (const round of [11,12]) {
+    advance(5500);
+    await selecting(round);
+    await a.click('[data-skill="dust"]'); await a.click('[data-action="lock"]');
+    await b.click('[data-skill="shadow-burst"]'); await b.click('[data-action="lock"]');
+    await a.wait('document.querySelector(".counting")');
+    advance(4000);
+    if (round === 11) {
+      await b.wait('document.querySelectorAll(".face-up").length === 2');
+      assert.equal(await b.evaluate('Number(document.querySelector(".your-side .hp-row b").textContent)'), 50);
+    }
+  }
   for (const tab of [a,b]) await tab.wait('document.querySelector(".result-screen")');
   assert.match(await a.evaluate('document.querySelector(".result-screen h1").textContent'), /menang/i);
   for (const tab of [a, b]) {
@@ -119,7 +125,7 @@ try {
   await a.click('[data-action="leave"]');
   await a.click('[data-action="confirm-leave"]');
   assert.deepEqual(errors, []);
-  console.log('PASS: Kristina assets, collection/unlock, desktop/mobile selection, 9-use charge, Execute type picker and private choice, 60% maximum HP+DEF damage, 35 damage Dust, 30% Execute spell threshold, immunity, and bot training.');
+  console.log('PASS: Kristina assets, collection/unlock, desktop/mobile selection, 9-use charge, Execute type picker and private choice, 50% maximum HP+DEF damage, 35 damage Dust, 25% Execute spell threshold, immunity, and bot training.');
 } finally {
   await browser.close();
   server.dispose();

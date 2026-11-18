@@ -92,7 +92,8 @@ for (const stage of ['results', 'intermission', 'playing']) test(`leaving during
   assert.equal(game.series.finished, true);
   assert.equal(game.series.winnerId, 'b');
   assert.equal(game.result.reason, 'forfeit');
-  assert.equal(publicGame(game, 'b').players[0].choice, null);
+  assert.equal(publicGame(game, 'b').players[0].choice ?? null, null);
+  if (stage === 'intermission') assert.equal(publicGame(game, 'b').players[0].heroId, null);
   assert.throws(() => requestRematch(game, 'b'), /keluar/);
 });
 

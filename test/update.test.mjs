@@ -13,16 +13,16 @@ function duel(first = 'golar', second = 'golar', spell = null, rivalSpell = null
 }
 function play(game, first, second, type = 'sword', rivalType = 'sword') {
   const now = game.updatedAt + 1;
-  if (!game.players[0].skipped) lockCard(game, 'a', first, game.round, now, type);
-  if (!game.players[1].skipped) lockCard(game, 'b', second, game.round, now, rivalType);
+  if (!game.players[0].skipped) lockCard(game, 'a', first, game.round, now, type, {targetEnergyType:'sword',restoreEnergyType:'shield'});
+  if (!game.players[1].skipped) lockCard(game, 'b', second, game.round, now, rivalType, {targetEnergyType:'sword',restoreEnergyType:'shield'});
   assert.equal(game.phase, 'countdown');
   advanceGame(game, game.deadline, () => 0);
   return game.lastRound.entries;
 }
 function next(game) { assert.equal(game.phase, 'reveal'); advanceGame(game, game.deadline); }
 
-const stats = { strom: [160, 60], roger: [120, 20], kristina: [130, 40], golar: [190, 60], warfet: [50, 150], nextland: [170, 30], rafel: [100, 100], quexyana: [100, 70] };
-test('all eight heroes and six spells have real supplied assets and current attributes', async () => {
+const stats = { strom: [160, 60], roger: [120, 20], kristina: [130, 40], golar: [190, 60], warfet: [50, 150], nextland: [170, 30], rafel: [100, 100], quexyana: [100, 70], genggar: [70, 70], spearos: [150, 100], karina: [100, 20], newland: [170, 10] };
+test('all twelve heroes and six spells have real supplied assets and current attributes', async () => {
   assert.deepEqual(Object.keys(HEROES), Object.keys(stats));
   assert.equal(Object.keys(BATTLE_SPELLS).length, 6);
   for (const hero of Object.values(HEROES)) {
@@ -84,13 +84,13 @@ test('Time Boom sacrifice and opponent knockout resolve as a draw without resurr
   assert.equal(g.lastRound.entries[0].spellHealed, 0);
 });
 
-test('Fly Over pierces HP and drains 38% of remaining defense, blocked by immunity', () => {
+test('Fly Over pierces HP without draining defense, blocked by immunity', () => {
   for (const immune of [false, true]) {
     const g = duel('kristina');
     if (immune) g.players[1].immuneTurns = 1;
     play(g, 'fly-over', 'mark');
-    assert.deepEqual([g.players[1].hp, g.players[1].defense], immune ? [190, 60] : [150, 37]);
-    assert.equal(g.lastRound.entries[1].defenseDrained, immune ? 0 : 23);
+    assert.deepEqual([g.players[1].hp, g.players[1].defense], immune ? [190, 60] : [150, 60]);
+    assert.equal(g.lastRound.entries[1].defenseDrained, 0);
   }
 });
 
@@ -132,19 +132,21 @@ test('Laser burn ticks exactly seven following rounds', () => {
   }
 });
 
-test('Soul Thief drains HP next round, accumulates healing stacks, and Soul User respects HP cap', () => {
+test('Soul Thief drains HP next round, accumulates defense stacks, and Soul User respects DEF cap', () => {
   const g = duel('warfet');
   play(g, 'soul-thief', 'deadly-slash');
   assert.equal(g.players[0].soulStacks, 1);
   assert.deepEqual([g.players[1].hp, g.players[1].defense], [190, 30]);
   next(g);
-  g.players[0].hp = 20;
+  g.players[0].hp = 20; g.players[0].defense = 125;
   play(g, 'soul-user', 'mark');
-  assert.deepEqual([g.players[0].hp, g.players[0].soulStacks], [40, 1]);
+  assert.deepEqual([g.players[0].hp, g.players[0].defense, g.players[0].soulStacks], [20, 145, 1]);
   assert.deepEqual([g.players[1].hp, g.players[1].defense], [170, 30]);
   next(g); play(g, 'soul-user', 'mark');
-  assert.equal(g.players[0].hp, 50);
-  assert.equal(g.lastRound.entries[0].healed, 10);
+  assert.equal(g.players[0].hp, 20);
+  assert.equal(g.players[0].defense, 150);
+  assert.equal(g.lastRound.entries[0].defenseGained, 5);
+  assert.equal(g.lastRound.entries[0].healed, 0);
   assert.equal(g.players[1].soulDrainTurns, 0);
 });
 
@@ -226,9 +228,9 @@ test('Technology Shield reflects a countering skill once, while status effects s
   const g = duel('quexyana', 'strom');
   const entries = play(g, 'technology-shield', 'lightning');
   assert.equal(entries[0].shieldReflected, true);
-  assert.equal(entries[1].reflectedDamage, 10);
+  assert.equal(entries[1].reflectedDamage, 5);
   assert.deepEqual([g.players[0].hp, g.players[0].defense, g.players[0].stun], [100, 70, 1]);
-  assert.equal(g.players[1].defense, 50);
+  assert.equal(g.players[1].defense, 55);
   const same = duel('quexyana', 'quexyana');
   play(same, 'technology-shield', 'technology-shield');
   assert.equal(same.lastRound.entries[0].shieldReflected, false);
@@ -315,35 +317,47 @@ test('Armor reduces only the countering skill, not old damage over time', () => 
   const g = duel('golar', 'golar', 'armor');
   g.players[0].burn = 1; g.players[0].burnDamage = 10;
   play(g, 'analysis-system', 'deadly-slash');
-  assert.equal(g.lastRound.entries[0].received, 5);
+  assert.equal(g.lastRound.entries[0].received, 16);
   assert.equal(g.lastRound.entries[0].burnDamage, 10);
-  assert.equal(g.lastRound.entries[0].prevented, 15);
+  assert.equal(g.lastRound.entries[0].prevented, 4);
 });
 
-test('Healing ticks every third round, caps at maximum HP, and never resurrects', () => {
+test('Healing triggers on every second lost counter, caps HP, and never resurrects', () => {
   const g = duel('golar', 'golar', 'healing');
   g.players[0].hp = 170;
-  for (let i = 0; i < 3; i++) {
-    play(g, 'mark', 'mark');
-    assert.equal(g.players[0].hp, i === 2 ? 190 : 170);
-    if (i < 2) next(g);
-  }
-  assert.equal(g.lastRound.entries[0].spellHealed, 20);
+  play(g, 'mark', 'mark');
+  assert.equal(g.players[0].hp, 170);
+  next(g); play(g, 'analysis-system', 'deadly-slash');
+  assert.equal(g.players[0].hp, 170);
+  next(g); play(g, 'mark', 'mark');
+  assert.equal(g.lastRound.entries[0].spellHealed, 0); // Round three is not the trigger.
+  next(g); play(g, 'analysis-system', 'deadly-slash');
+  assert.equal(g.players[0].hp, 180);
+  assert.equal(g.lastRound.entries[0].spellHealed, 30); // Old wound reduced HP first.
+  const capped = duel('golar', 'golar', 'healing');
+  capped.players[0].hp = 180; capped.players[0].spellCountered = 1;
+  play(capped, 'mark', 'analysis-system');
+  assert.equal(capped.lastRound.entries[0].spellHealed, 10);
   const dead = duel('golar', 'golar', 'healing');
-  dead.round = 3; dead.players[0].hp = 10; dead.players[0].defense = 0;
+  dead.players[0].spellCountered = 1; dead.players[0].hp = 10; dead.players[0].defense = 0;
   play(dead, 'analysis-system', 'deadly-slash');
   assert.equal(dead.players[0].hp, 0);
   assert.equal(dead.lastRound.entries[0].spellHealed, 0);
 });
 
-test('Execute spell includes exactly 30%, works on failed skills, and precedes Healing', () => {
-  for (const hp of [57, 58]) {
-    const g = duel('golar', 'golar', 'execute', 'healing');
-    g.round = 3; g.players[1].hp = hp;
-    play(g, 'mark', 'mark');
-    assert.equal(g.players[1].hp, hp === 57 ? 0 : 88);
-    assert.equal(g.lastRound.entries[0].spellExecuted, hp === 57);
+test('Execute spell includes exactly 25%, works on failed skills, and precedes Healing', () => {
+  for (const hp of [25, 26]) {
+    const g = duel('golar', 'quexyana', 'execute', 'healing');
+    g.players[1].hp = hp;
+    play(g, 'mark', 'hail-of-bullets'); // Same arrow type: no counter and no healing.
+    assert.equal(g.players[1].hp, hp === 25 ? 0 : 26);
+    assert.equal(g.lastRound.entries[0].spellExecuted, hp === 25);
   }
+  const heal = duel('golar', 'golar', 'execute', 'healing');
+  heal.players[1].hp = 47; heal.players[1].spellCountered = 1;
+  play(heal, 'deadly-slash', 'analysis-system');
+  assert.equal(heal.players[1].hp, 0);
+  assert.equal(heal.lastRound.entries[1].spellHealed, 0);
   const immune = duel('golar', 'golar', 'execute');
   immune.players[1].hp = 38; immune.players[1].immuneTurns = 1;
   play(immune, 'mark', 'mark');
@@ -374,7 +388,7 @@ test('new loadout snapshots keep locked skill and spell counters private until r
   assert.equal(publicGame(g, 'b').players[0].choice, null);
 });
 
-test('mixed hero/spell duels keep HP, DEF, energy, timers and snapshots valid across 64 matchups', async () => {
+test('mixed hero/spell duels keep HP, DEF, energy, timers and snapshots valid across 144 matchups', async () => {
   const { availableSkills } = await import('../lib/game.mjs');
   const ids = Object.keys(HEROES), spells = Object.keys(BATTLE_SPELLS);
   let seed = 74125;
@@ -387,14 +401,14 @@ test('mixed hero/spell duels keep HP, DEF, energy, timers and snapshots valid ac
         const choices = availableSkills(player);
         assert.ok(choices.length > 0);
         const skill = choices[Math.floor(random() * choices.length)];
-        lockCard(g, player.id, skill.id, g.round, g.updatedAt, skill.type);
+        lockCard(g, player.id, skill.id, g.round, g.updatedAt, skill.type, skill);
       }
       assert.equal(g.phase, 'countdown');
       for (const viewer of g.players) assert.equal(publicGame(g, viewer.id).players.find(p => p.id !== viewer.id).choice, null);
       advanceGame(g, g.deadline, random);
       for (const player of g.players) {
         assert.ok(Number.isInteger(player.hp) && player.hp >= 0 && player.hp <= HEROES[player.heroId].hp);
-        assert.ok(Number.isInteger(player.defense) && player.defense >= 0 && player.defense <= HEROES[player.heroId].defense);
+        assert.ok(Number.isInteger(player.defense) && player.defense >= 0 && player.defense <= player.maxDefense);
         assert.ok(Object.values(player.energy).every(n => Number.isInteger(n) && n >= 0 && n <= 3));
         assert.ok(Object.values(player.energy).some(n => n > 0));
       }

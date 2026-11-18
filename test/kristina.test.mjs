@@ -101,7 +101,7 @@ test('buff duration continues during stun and bonuses also apply to Execute', ()
   assert.equal(g.players[0].damageBuffTurns, 2);
   next(g);
   g.players[0].ultimateReady = true;
-  assert.equal(play(g, 'execute', 'dust', 'shield')[0].attack, 112);
+  assert.equal(play(g, 'execute', 'dust', 'shield')[0].attack, 95);
 });
 
 test('nine primary uses refill energy and charge one ultimate; locked choice stays private', () => {
@@ -151,7 +151,7 @@ for (const type of Object.keys(SKILL_TYPES)) for (const rival of HEROES.kristina
     g.players[0].ultimateReady = true;
     const entries = play(g, 'execute', rival.id, type);
     assert.equal(entries[0].outcome, SKILL_TYPES[type].counters === rival.type ? 'counter' : 'countered');
-    assert.equal(entries[0].attack, SKILL_TYPES[type].counters === rival.type ? 102 : 0);
+    assert.equal(entries[0].attack, SKILL_TYPES[type].counters === rival.type ? 85 : 0);
     assert.equal(g.players[0].ultimateReady, false);
     for (const skill of HEROES.kristina.skills) assert.equal(g.players[0].energy[skill.id], skill.type === type ? 2 : 3);
   });
@@ -164,7 +164,7 @@ test('Execute kills below 60% before damage, ignores defense, but not at exactly
     g.players[1].hp = hp;
     const entries = play(g, 'execute', 'ultimate', 'sword');
     assert.equal(entries[0].executed, hp < 96);
-    assert.equal(g.players[1].hp, hp < 96 ? 0 : hp - 72);
+    assert.equal(g.players[1].hp, hp < 96 ? 0 : hp - 50);
     assert.equal(g.players[1].defense, hp < 96 ? 60 : 0);
   }
 });

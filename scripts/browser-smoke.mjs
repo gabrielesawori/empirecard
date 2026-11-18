@@ -35,7 +35,7 @@ try {
   await a.screenshot('profile');
   await a.click('.page-back');
   await a.click('[data-page="heroes"]');
-  assert.equal(await a.evaluate('document.querySelectorAll(".library-card").length'), 8);
+  assert.equal(await a.evaluate('document.querySelectorAll(".library-card").length'), 12);
   for (const hero of ['golar']) {
     await a.click(`[data-action="hero-details"][data-hero="${hero}"]`);
     assert.match(await a.evaluate('document.querySelector("#dialog-content").textContent'), /Deadly Slash/);
@@ -161,14 +161,15 @@ try {
   await a.noOverflow();
   await b.noOverflow();
   // Finish naturally, then rematch and forfeit to verify both result paths.
-  for (const round of ['04']) {
+  for (const round of ['04','05']) {
     await a.wait(`document.querySelector('.round-counter strong').textContent === '${round}'`);
     await b.wait('document.querySelectorAll(".skill-card:not(:disabled)").length > 0');
     await a.click('[data-skill="ultimate"]');
     await a.click('[data-action="lock"]');
     await b.click('[data-skill="long-fire"]');
     await b.click('[data-action="lock"]');
-    await a.wait('document.querySelector(".result-screen")');
+    await a.wait('document.querySelector(".result-screen") || document.querySelectorAll(".face-up").length === 2');
+    if (await a.evaluate('Boolean(document.querySelector(".result-screen"))')) break;
   }
   await a.wait('document.querySelector(".result-screen")');
   await b.wait('document.querySelector(".result-screen")');

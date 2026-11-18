@@ -76,7 +76,7 @@ test('a ranked forfeit settles both players once, logout also forfeits, and trai
   const joined = (await f.request('join',{heroId:'roger',code:room.state.code},b.cookie)).data;
   await f.request('ready',{},a.cookie,room.token); await f.request('ready',{},b.cookie,joined.token);
   assert.equal((await f.request('leave',{},b.cookie,joined.token)).data.series.winnerId,room.state.you);
-  assert.equal((await f.request('me',undefined,a.cookie)).data.profile.points,15);
+  assert.equal((await f.request('me',undefined,a.cookie)).data.profile.points,50);
   assert.equal((await f.request('me',undefined,b.cookie)).data.profile.losses,1);
   await f.request('leave',{},a.cookie,room.token); await f.flush();
   assert.equal((await f.request('me',undefined,a.cookie)).data.profile.wins,1);
@@ -87,13 +87,13 @@ test('a ranked forfeit settles both players once, logout also forfeits, and trai
   const rival = (await f.request('join',{heroId:'roger',code:second.state.code},b.cookie)).data;
   await f.request('ready',{},a.cookie,second.token); await f.request('ready',{},b.cookie,rival.token);
   await f.request('logout',{},a.cookie); await f.flush();
-  assert.equal((await f.request('me',undefined,b.cookie)).data.profile.points,15);
+  assert.equal((await f.request('me',undefined,b.cookie)).data.profile.points,10);
 });
 
 test('auth attempts are bounded and untrusted profile fields never alter points, coins or ownership', async t => {
   const f = await fixture(t), a = await f.register('Alice');
   const edited = (await f.request('profile',{name:'New Alice',points:99999,coins:99999,ownedHeroes:[]},a.cookie)).data.profile;
-  assert.equal(edited.name,'New Alice'); assert.equal(edited.points,0); assert.equal(edited.coins,0); assert.equal(edited.ownedHeroes.length,8);
+  assert.equal(edited.name,'New Alice'); assert.equal(edited.points,0); assert.equal(edited.coins,0); assert.equal(edited.ownedHeroes.length,12);
   for (let i=0;i<19;i++) assert.equal((await f.request('register',{username:'x'})).status,400);
   assert.equal((await f.request('login',{})).status,429);
   f.advance(300000);

@@ -23,6 +23,33 @@ async function fixture(t) {
   return { ...app, base, request, advance(ms) { time += ms; app.tick(); } };
 }
 
+test('Genggar choices validate through HTTP, survive reconnect and remain private until the four-second reveal', async t => {
+  const f = await fixture(t);
+  const a = (await f.request('rooms', {name:'A',heroId:'genggar',battleSpellId:'healing'})).data;
+  const b = (await f.request('join', {name:'B',heroId:'spearos',battleSpellId:'armor',code:a.state.code})).data;
+  assert.equal(b.state.players[0].heroId,null);
+  assert.equal(b.state.players[0].battleSpellId,null);
+  assert.equal('energy' in b.state.players[0],false);
+  await f.request('ready',{},a.token); await f.request('ready',{},b.token);
+  for (const token of [a.token,b.token]) await f.request('lock',{skillId:token===a.token?'magic-shot':'knights-resolve',round:1},token);
+  f.advance(4000); f.advance(5500);
+  assert.equal((await f.request('lock',{skillId:'energy-thief',round:2},a.token)).status,400);
+  assert.equal((await f.request('lock',{skillId:'energy-thief',round:2,targetEnergyType:'arrow',restoreEnergyType:'sword'},a.token)).status,200);
+  const own = (await f.request('state',undefined,a.token)).data.players[0];
+  assert.equal(own.choiceRestoreType,'sword');
+  const hidden = (await f.request('state',undefined,b.token)).data.players[0];
+  assert.equal(hidden.choiceRestoreType,null); assert.equal(hidden.choiceTargetType,null);
+  await f.request('lock',{skillId:'spear-strike',round:2},b.token);
+  f.advance(3999); assert.equal((await f.request('state',undefined,b.token)).data.players[0].choiceTargetType,null);
+  f.advance(1);
+  const first = (await f.request('state',undefined,a.token)).data;
+  const second = (await f.request('state',undefined,b.token)).data;
+  assert.deepEqual(first.players,second.players);
+  assert.equal(first.players[0].energy['magic-shot'],3);
+  assert.equal(first.players[1].energy['spear-strike'],1);
+  assert.equal(first.lastRound.entries[0].energyStolen,1);
+});
+
 test('two clients create, join, lock secretly, reveal in sync, resume, and forfeit', async t => {
   const f = await fixture(t);
   const first = await f.request('rooms', { name: 'Alice', heroId: 'strom' });
@@ -126,7 +153,7 @@ test('Kristina mirror duel unlocks Execute through the API while its type and en
   assert.equal(result.players[0].choiceType, 'arrow');
   assert.equal(result.players[0].ultimate.ready, false);
   assert.equal(result.players[0].energy.dust, 2);
-  assert.equal(result.players[1].hp, 68);
+  assert.equal(result.players[1].hp, 85);
 });
 
 test('static server serves actual assets but never exposes source or allows cross-origin mutations', async t => {
@@ -225,6 +252,6 @@ test('battle spell loadout persists across hero change, reconnect and rematch, a
   assert.deepEqual(one.data.players, two.data.players);
   assert.equal(one.data.players[0].hitBonus, 5);
   assert.equal(one.data.players[0].spellCounters, 1);
-  assert.equal(one.data.players[1].defense, 135); // 30 damage minus Armor 15.
+  assert.equal(one.data.players[1].defense, 126); // Armor reduces the 30 damage by 20%.
   assert.equal(one.data.players[1].scarTurns, 2);
 });

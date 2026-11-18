@@ -16,10 +16,10 @@ async function users(store = createStore()) {
 }
 
 test('rank boundaries follow all five divisions and God points remain uncapped', () => {
-  for (const [points, label, progress] of [[0,'Bronze I',0],[9,'Bronze I',9],[10,'Bronze II',0],[49,'Bronze V',9],[50,'Elite I',0],[149,'Elite V',19],[150,'Master I',0],[349,'Master V',39],[350,'Grandmaster I',0],[749,'Grandmaster V',79],[750,'Legendary I',0],[1549,'Legendary V',159],[1550,'God',0],[99999,'God',0]]) {
+  for (const [points, label, progress] of [[0,'Bronze I',0],[9,'Bronze I',9],[10,'Bronze II',0],[49,'Bronze V',9],[50,'Elite I',0],[199,'Elite V',29],[200,'Master I',0],[649,'Master V',89],[650,'Grandmaster I',0],[1999,'Grandmaster V',269],[2000,'Legendary I',0],[5499,'Legendary V',699],[5500,'God',0],[99999,'God',0]]) {
     assert.equal(rankFor(points).label, label); assert.equal(rankFor(points).progress, progress);
   }
-  assert.equal(rankFor(99999).points, 99999); assert.equal(rankFor(1550).required, null);
+  assert.equal(rankFor(99999).points, 99999); assert.equal(rankFor(5500).required, null);
 });
 
 test('accounts persist across restart; passwords and sessions are hashed, and logout revokes sessions', async t => {
@@ -28,7 +28,7 @@ test('accounts persist across restart; passwords and sessions are hashed, and lo
   const store = createStore({file});
   const accounts = createAccounts(store);
   const first = await accounts.register(registration('Alice'));
-  assert.equal(first.profile.coins, 0); assert.equal(first.profile.ownedHeroes.length, 8);
+  assert.equal(first.profile.coins, 0); assert.equal(first.profile.ownedHeroes.length, 12);
   const raw = await readFile(file, 'utf8');
   assert.equal(raw.includes(password), false); assert.equal(raw.includes(first.token), false);
   assert.equal((await stat(file)).mode & 0o777, 0o600);
@@ -98,12 +98,12 @@ test('rank and records settle once per completed series, with no economy transac
   await accounts.settle(game); assert.equal((await accounts.profile(a.id)).points,0);
   game.series.finished = true;
   await Promise.all(Array.from({length:10},() => accounts.settle(game)));
-  assert.equal((await accounts.profile(a.id)).points,15); assert.equal((await accounts.profile(a.id)).wins,1);
+  assert.equal((await accounts.profile(a.id)).points,10); assert.equal((await accounts.profile(a.id)).wins,1);
   assert.equal((await accounts.profile(b.id)).points,0); assert.equal((await accounts.profile(b.id)).losses,1);
   game.series = {id:'two',finished:true,winnerId:'b'}; await accounts.settle(game);
-  assert.equal((await accounts.profile(a.id)).points,10); assert.equal((await accounts.profile(b.id)).points,15);
+  assert.equal((await accounts.profile(a.id)).points,5); assert.equal((await accounts.profile(b.id)).points,10);
   game.mode = 'casual'; game.series.id = 'three'; await accounts.settle(game);
-  assert.equal((await accounts.profile(b.id)).wins,2); assert.equal((await accounts.profile(b.id)).points,15);
+  assert.equal((await accounts.profile(b.id)).wins,2); assert.equal((await accounts.profile(b.id)).points,10);
   game.mode = 'training'; game.series.id = 'four'; await accounts.settle(game);
   assert.equal((await accounts.profile(b.id)).wins,2);
   assert.equal((await accounts.profile(a.id)).coins,0); assert.equal((await store.read(d => d.results)).length,3);

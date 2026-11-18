@@ -26,7 +26,7 @@ try {
   }
   assert.equal(await a.evaluate('document.cookie.includes("empire_account")'),false);
   const aProfile = await me(a), bProfile = await me(b);
-  assert.equal(aProfile.coins,0); assert.equal(aProfile.ownedHeroes.length,8);
+  assert.equal(aProfile.coins,0); assert.equal(aProfile.ownedHeroes.length,12);
   await a.screenshot('v06-home-desktop'); await b.screenshot('v06-home-mobile');
   // Login restores the same identity, not a new local profile.
   await b.click('[data-page="profile"]'); await b.click('[data-action="logout"]');
@@ -96,17 +96,17 @@ try {
   await app.flush(); await a.wait('document.querySelector(".result-sync")?.textContent.includes("tersimpan")');
   for(const tab of [a,b]) {await tab.noOverflow();await tab.wait('document.querySelector(".result-screen")');}
   await a.screenshot('v06-series-result'); await b.screenshot('v06-series-result-mobile');
-  assert.equal((await me(a)).points,15); assert.equal((await me(a)).wins,1); assert.equal((await me(b)).losses,1); assert.equal((await me(b)).points,0);
+  assert.equal((await me(a)).points,30); assert.equal((await me(a)).wins,1); assert.equal((await me(b)).losses,1); assert.equal((await me(b)).points,0);
   assert.equal(await soundCount(a,'victory'),2); assert.equal(await soundCount(b,'defeat'),2);
   await send('Page.reload',{},a.sessionId); await a.wait('document.querySelector(".result-screen")');
-  assert.equal((await me(a)).points,15); assert.equal(await soundCount(a,'victory'),2);
+  assert.equal((await me(a)).points,30); assert.equal(await soundCount(a,'victory'),2);
   for (const tab of [a,b]) {await tab.click('[data-action="leave"]');await tab.click('[data-action="confirm-leave"]');await tab.wait('document.querySelector(".menu-layout")');}
   await a.click('[data-page="leaderboard"]'); await a.wait('document.querySelector(".leaderboard-entry")');
   assert.equal(await a.evaluate('document.querySelector(".leaderboard-entry strong").textContent'),'Astra');
   await a.screenshot('v06-leaderboard'); await a.noOverflow();
   await b.click('[data-page="rank"]'); await b.noOverflow(); await b.screenshot('v06-rank-mobile');
   await b.click('.page-back'); await b.click('[data-page="points"]'); await b.noOverflow();
-  assert.equal(await b.evaluate('document.querySelectorAll(".shop-grid button:disabled").length'),8);
+  assert.equal(await b.evaluate('document.querySelectorAll(".shop-grid button:disabled").length'),12);
   for (const width of [320,768]) {
     const compact = await page(width,900);
     await compact.noOverflow();

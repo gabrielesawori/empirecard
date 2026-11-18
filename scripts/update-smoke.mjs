@@ -16,9 +16,9 @@ try {
   const b = await page(390, 844);
   for (const tab of [a, b]) {
     await tab.click('[data-page="heroes"]');
-    assert.equal(await tab.evaluate('document.querySelectorAll(".library-card").length'), 8);
+    assert.equal(await tab.evaluate('document.querySelectorAll(".library-card").length'), 12);
     assert.equal(await tab.evaluate('document.querySelectorAll(".spell-library-card").length'), 6);
-    for (const hero of ['golar', 'warfet', 'nextland', 'rafel', 'quexyana']) {
+    for (const hero of ['golar', 'warfet', 'nextland', 'rafel', 'quexyana', 'genggar', 'spearos', 'karina', 'newland']) {
       await tab.click(`[data-action="hero-details"][data-hero="${hero}"]`);
       assert.equal(await tab.evaluate('document.querySelectorAll(".collection-skills > div").length'), 4);
       await tab.wait('[...document.querySelectorAll("#info-dialog img")].every(img => img.complete && img.naturalWidth > 0)');
@@ -61,7 +61,8 @@ try {
   await b.wait('document.querySelector(".room-code-big")');
   await b.click('[data-action="room-spell"][data-spell="armor"]');
   await b.wait('document.querySelector("[data-action=room-spell][data-spell=armor]").matches(".selected:not(:disabled)")');
-  await a.wait('document.querySelector(".rival-spell-preview").textContent.includes("Armor")');
+  assert.equal(await a.evaluate('document.querySelector(".rival-spell-preview")'), null);
+  assert.match(await a.evaluate('document.querySelector(".waiting-arena").textContent'), /dirahasiakan/);
   for (const tab of [a, b]) await tab.noOverflow();
   await b.screenshot('v05-mobile-lobby');
   await send('Page.reload', {}, b.sessionId);
@@ -82,20 +83,20 @@ try {
   }
   await play('mark', 'soul-lock');
   assert.equal(await a.evaluate('document.querySelector(".your-side .spell-slot small").textContent'), '+5 DAMAGE');
-  assert.equal(await b.evaluate('Number(document.querySelector(".your-side .defense-row b").textContent)'), 150);
+  assert.equal(await b.evaluate('Number(document.querySelector(".your-side .defense-row b").textContent)'), 146);
   assert.match(await a.evaluate('document.querySelector(".your-side .buff-status").textContent'), /\+20 DMG/);
   advance(5500);
   for (const tab of [a, b]) await tab.wait('document.querySelector(".round-counter strong").textContent === "02"');
   await play('deadly-slash', 'soul-user');
   assert.equal(await a.evaluate('document.querySelector(".your-side .spell-slot small").textContent'), '+10 DAMAGE');
-  assert.equal(await b.evaluate('Number(document.querySelector(".your-side .defense-row b").textContent)'), 120);
+  assert.equal(await b.evaluate('Number(document.querySelector(".your-side .defense-row b").textContent)'), 110);
   assert.match(await b.evaluate('document.querySelector(".your-side .status-effects").textContent'), /LUKA · 2/);
   for (const tab of [a, b]) await tab.noOverflow();
   await a.screenshot('v05-arena'); await b.screenshot('v05-mobile-arena');
   advance(5500);
   for (const tab of [a, b]) await tab.wait('document.querySelector(".round-counter strong").textContent === "03"');
-  await play('analysis-system', 'soul-user'); // Equal shield: only the old wound ticks.
-  assert.equal(await b.evaluate('Number(document.querySelector(".your-side .hp-row b").textContent)'), 40);
+  await play('analysis-system', 'soul-user'); // Equal shield: the old wound is blocked by Warfet’s DEF.
+  assert.equal(await b.evaluate('Number(document.querySelector(".your-side .hp-row b").textContent)'), 50);
   assert.match(await b.evaluate('document.querySelector(".your-side .status-effects").textContent'), /LUKA · 1/);
   await a.click('.your-side [data-action="spell-details"]');
   assert.match(await a.evaluate('document.querySelector(".spell-dialog").textContent'), /menumpuk/);
@@ -105,7 +106,7 @@ try {
     await tab.wait('document.querySelector(".menu-layout")');
   }
   assert.deepEqual(errors, []);
-  console.log('PASS: 8 heroes, 6 spell cards, real assets, details, roster at 320/390/768/1024/1440px, loadout selection and persistence, lobby changes, private locks, Golar/Warfet duel, Retribution/Armor, HP wound ticks, and spell progress on both clients.');
+  console.log('PASS: 12 heroes, 6 spell cards, real assets, details, roster at 320/390/768/1024/1440px, loadout selection and persistence, lobby changes, private locks, Golar/Warfet duel, Retribution/Armor, Warfet HP protection, and spell progress on both clients.');
 } finally {
   await browser.close();
   app.dispose();
