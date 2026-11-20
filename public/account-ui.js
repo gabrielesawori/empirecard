@@ -8,11 +8,48 @@ export function createAccountUI({ icon, escape, avatar }) {
   const progress = profile => `<div class="rank-progress"><div><span>${profile.rank.required ? 'Menuju tingkat berikutnya' : 'Rank tertinggi'}</span><b>${profile.rank.required ? `${profile.rank.progress} / ${profile.rank.required}` : `${profile.points} WP`}</b></div><div class="bar"><span style="width:${profile.rank.required ? profile.rank.progress / profile.rank.required * 100 : 100}%"></span></div></div>`;
   function home({ profile, heroId, social }) {
     const hero = HEROES[heroId];
-    const tiles = [['heroes','cards','Hero',`${Object.keys(HEROES).length} kartu terbuka`],['friends','user','Teman',`${social?.friends.length ?? 0} teman`],['rank','crown','Rank',profile.rank.label],['leaderboard','trophy','Leaderboard',`${profile.points} WP`],['events','calendar','Event','Coming soon'],['settings','settings','Setting','Audio & preferensi']];
-    return `<section class="app-welcome"><div><span class="eyebrow">EMPIRE CARD</span><h1>Selamat datang, ${escape(profile.name)}.</h1></div><button class="welcome-profile" data-page="profile">${avatar(profile)}<span>Profil ${icon('arrow')}</span></button></section>
-    <div class="menu-layout app-menu"><section class="app-feature"><img src="${hero.image}" alt="${hero.name}" class="feature-art"><div class="feature-overlay"></div><div class="feature-top"><span class="live-label"><i></i> ARENA 1V1</span>${rankBadge(profile)}</div><div class="feature-copy"><span class="eyebrow">${hero.role} · ${hero.name}</span><h2>Satu kartu.<br>Jutaan kemungkinan.</h2><p>Bangun strategi. Baca pilihan rival.</p><button class="button primary menu-play" data-page="matchmaking">${icon('sword')} MAIN SEKARANG ${icon('arrow')}</button><button class="text-button" data-nav="rules">Pelajari cara bermain ↗</button></div></section>
-    <section class="app-dashboard"><div class="dashboard-rank"><div>${icon('crown')}<span><small>PERJALANAN RANK</small><strong>${profile.rank.label}</strong></span><b>${profile.points}<small>WP</small></b></div>${progress(profile)}</div><section class="menu-destinations app-shortcuts">${tiles.map(([page,symbol,title,sub]) => `<button class="destination-tile" data-page="${page}">${icon(symbol)}<strong>${title}</strong><small>${escape(sub)}</small>${page === 'friends' && (social?.incoming.length || social?.invites.length) ? `<span class="notification-dot">${social.incoming.length + social.invites.length}</span>` : ''}</button>`).join('')}</section><p class="menu-footnote">${escape(profile.uid)} <span>·</span> ${profile.played} duel <span>·</span> ${profile.winrate}% kemenangan</p></section></div>`;
+    const roster = Object.values(HEROES);
+    const missions = [
+      ['matchmaking', 'sword', 'Duel Ranked', 'Menangkan seri untuk menaikkan WP dan rank.', 'PLAY', false],
+      ['matchmaking', 'flame', 'Duel Casual', 'Latihan tanpa memengaruhi statistik rank.', 'PLAY', false],
+      ['friends', 'user', 'Undang Teman', 'Tantang teman lewat UID atau kode room.', 'SOCIAL', false],
+      ['events', 'calendar', 'Event Musiman', 'Kisah dan tantangan baru sedang disiapkan.', 'LOCKED', true],
+    ];
+    return `
+    <section class="splash" data-reveal>
+      <img class="splash-art" src="${hero.image}" alt="" aria-hidden="true" data-parallax="0.09">
+      <img class="splash-portrait" src="${hero.image}" alt="${hero.name}">
+      <div class="splash-body">
+        <div class="splash-tags"><span class="splash-chip"><i></i> ARENA 1V1 · LIVE</span>${rankBadge(profile)}</div>
+        <h1>Satu kartu.<br><em>Jutaan kemungkinan.</em></h1>
+        <p class="splash-lead">Bangun strategi, baca pilihan rival, dan rebut takdirmu di arena. Setiap babak dimulai dari kartu tertutup.</p>
+        <div class="splash-actions">
+          <button class="button primary menu-play" data-page="matchmaking" data-magnet="0.22" data-ripple>${icon('sword')} MAIN SEKARANG ${icon('arrow')}</button>
+          <button class="text-button" data-nav="rules">Pelajari cara bermain ↗</button>
+        </div>
+      </div>
+    </section>
+    <section class="hud-rail">
+      <button type="button" class="hud-card rail-rank" data-page="rank" aria-label="Buka rank dan perolehan poin" data-reveal>
+        <span class="rail-emblem">${icon('crown')}</span>
+        <div style="flex:1;min-width:0">
+          <small>PERJALANAN RANK</small>
+          <strong>${profile.rank.label}</strong>
+          ${progress(profile)}
+        </div>
+      </button>
+      <article class="hud-card" data-reveal data-reveal-delay="60">${icon('coin')}<small>WIN POINT</small><div class="hud-figure"><b data-count-to="${profile.points}">0</b><span>WP</span></div></article>
+      <article class="hud-card" data-reveal data-reveal-delay="120">${icon('trophy')}<small>WINRATE</small><div class="hud-figure"><b data-count-to="${profile.winrate}">0</b><span>%</span></div></article>
+      <article class="hud-card" data-reveal data-reveal-delay="180">${icon('cards')}<small>TOTAL DUEL</small><div class="hud-figure"><b data-count-to="${profile.played}">0</b><span>DUEL</span></div></article>
+    </section>
+    <section class="roster">
+      <div class="roster-head"><div><h2>Roster Legendamu</h2><p>${roster.length} hero terbuka · geser untuk melihat semua</p></div><button class="button secondary compact" data-page="heroes">${icon('cards')} Semua hero</button></div>
+      <div class="roster-scroll" role="list">${roster.map((h, index) => `<button class="roster-card ${heroId === h.id ? 'is-selected' : ''}" role="listitem" data-action="choose-hero" data-hero="${h.id}" data-tilt="10" aria-pressed="${heroId === h.id}" aria-label="Pilih ${h.name}"><span class="roster-rank">${String(index + 1).padStart(2, '0')}</span><span class="roster-stats"><b>${icon('heart')} ${h.hp}</b><b>${icon('shield')} ${h.defense}</b></span><img src="${h.image}" alt="Kartu hero ${h.name}" loading="lazy"><span class="roster-glare"></span><span class="roster-meta"><strong>${h.name}</strong><span>${h.role} · ${h.element}</span></span><span class="roster-picked">${icon('check')} Hero pilihanmu</span></button>`).join('')}</div>
+    </section>
+    <section class="mission-grid">${missions.map(([page, symbol, title, sub, label, locked], index) => `<button class="mission-tile ${locked ? 'mission-locked' : ''}" data-page="${page}" data-reveal data-reveal-delay="${index * 60}" ${locked ? 'disabled' : ''}>${icon(symbol)}<h3>${title}</h3><p>${sub}</p><span class="mission-foot"><small>${label}</small>${icon('arrow')}</span></button>`).join('')}</section>
+    <p class="menu-footnote">${escape(profile.uid)} <span>·</span> ${profile.played} duel <span>·</span> ${profile.winrate}% kemenangan${social?.incoming?.length || social?.invites?.length ? ` <span>·</span> ${social.incoming.length + social.invites.length} notifikasi` : ''}</p>`;
   }
+
   function auth({ register = false, busy }) {
     return `<section class="auth-layout"><div class="auth-art"><img src="${HEROES.kristina.image}" alt="Kristina"><div><span class="eyebrow">EMPIRE CARD</span><h1>Arena untuk<br>setiap legenda.</h1><p>Simpan progres, temukan teman, dan taklukkan rank.</p></div></div><div class="auth-panel"><span class="eyebrow">${register ? 'MULAI PERJALANAN' : 'SELAMAT DATANG KEMBALI'}</span><h2>${register ? 'Buat akunmu.' : 'Masuk ke arena.'}</h2><div class="auth-tabs"><button class="${register ? '' : 'active'}" data-page="login">Login</button><button class="${register ? 'active' : ''}" data-page="register">Registrasi</button></div><form id="account-form" class="auth-form" data-mode="${register ? 'register' : 'login'}">${register ? '<label for="account-username">USERNAME</label><input id="account-username" name="username" minlength="2" maxlength="20" autocomplete="nickname" placeholder="Nama petarungmu" required>' : ''}<label for="account-email">EMAIL</label><input id="account-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="nama@email.com" required><label for="account-password">PASSWORD</label><input id="account-password" name="password" type="password" minlength="${register ? 12 : 1}" maxlength="128" autocomplete="${register ? 'new-password' : 'current-password'}" placeholder="${register ? 'Minimal 12 karakter' : 'Password akunmu'}" required><button type="submit" class="button primary full" ${busy ? 'disabled' : ''}>${busy ? 'Memproses…' : register ? 'Buat akun' : 'Masuk'} ${icon('arrow')}</button></form><p class="auth-alternative">Semua hero terbuka selama masa pengujian.</p></div></section>`;
   }

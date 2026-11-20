@@ -6,21 +6,30 @@
   <meta name="theme-color" content="#0c1017">
   <meta name="description" content="Empire Card — pilih hero, letakkan kartu skill tertutup, dan hadapi lawan dalam duel simultan.">
   <title>Empire Card — Arena Duel</title>
+  <script nonce="{{CSP_NONCE}}" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9942172564347932" crossorigin="anonymous"></script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/hub.css">
   <link rel="stylesheet" href="/app-shell.css">
-  <script type="module" src="/app.js"></script>
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/game.css">
+  <script nonce="{{CSP_NONCE}}" type="module" src="/app.js"></script>
 </head>
 <body>
-  <div class="ambient ambient-blue"></div><div class="ambient ambient-gold"></div>
-  <header class="site-header">
+  <div class="arena-backdrop" aria-hidden="true">
+    <div class="backdrop-photo" data-parallax="0.06"></div>
+    <div class="backdrop-glow"></div><div class="backdrop-glow alt"></div>
+    <div class="backdrop-scanlines"></div><div class="backdrop-grain"></div>
+    <div class="backdrop-vignette"></div>
+  </div>
+  <header class="hud-bar">
     <a class="brand" href="#home" data-page="home" aria-label="Empire Card, menu utama"><img src="/favicon.svg" alt="" width="42" height="42"><span>EMPIRE<span class="brand-bottom">C A R D</span></span></a>
-    <nav aria-label="Navigasi utama"><button class="nav-link active" data-page="home">Menu utama</button><button class="nav-link" data-page="heroes">Hero</button><button class="nav-link" data-page="leaderboard">Leaderboard</button><button class="nav-link" data-nav="rules">Panduan <span>↗</span></button></nav>
-    <div class="header-end"><button id="header-coin" class="header-coin" data-page="points" aria-label="Battle Coin dan toko"></button><div class="server-status"><i></i><span id="connection-label">Menghubungkan</span></div><button id="header-profile" class="header-profile" data-page="profile" aria-label="Buka profil pemain"></button><span class="version">ALPHA 0.7</span></div>
+    <nav class="hud-nav" aria-label="Navigasi utama"><button class="nav-link active" data-page="home">Menu utama</button><button class="nav-link" data-page="heroes">Hero</button><button class="nav-link" data-page="leaderboard">Leaderboard</button><button class="nav-link" data-nav="rules">Panduan <span>↗</span></button></nav>
+    <div class="hud-end"><button id="header-coin" class="hud-coin" data-page="points" aria-label="Battle Coin dan toko"></button><div id="connection-status" class="hud-status" role="status" aria-live="polite"><i></i><span id="connection-label">Menghubungkan</span></div><button id="header-profile" class="hud-profile" data-page="profile" aria-label="Buka profil pemain"></button><span class="hud-version">ALPHA 0.7.1</span></div>
+    <span class="hud-progress" data-scroll-progress aria-hidden="true"></span>
   </header>
   <main id="app" tabindex="-1"><div class="loading">Menyiapkan arena…</div></main>
-  <nav class="bottom-nav" aria-label="Menu aplikasi"><button data-page="home">⌂<span>Home</span></button><button data-page="heroes">◇<span>Hero</span></button><button data-page="matchmaking">⚔<span>Main</span></button><button data-page="friends">♧<span>Teman</span></button><button data-page="profile">♙<span>Profil</span></button></nav>
+  <nav class="dock" aria-label="Menu aplikasi"><button class="dock-button" data-page="home" data-dock="home">⌂<span>Home</span><i class="dock-badge"></i></button><button class="dock-button" data-page="heroes" data-dock="heroes">◇<span>Hero</span><i class="dock-badge"></i></button><button class="dock-button" data-page="matchmaking" data-dock="matchmaking">⚔<span>Main</span><i class="dock-badge"></i></button><button class="dock-button" data-page="friends" data-dock="friends">♧<span>Teman</span><i class="dock-badge"></i></button><button class="dock-button" data-page="profile" data-dock="profile">♙<span>Profil</span><i class="dock-badge"></i></button></nav>
   <footer class="site-footer"><span>EMPIRE CARD <span class="footer-divider">/</span> DUA HERO. SATU PEMENANG.</span><span>Dirancang untuk duel <i>✦</i></span></footer>
   <dialog id="info-dialog"><button class="dialog-close" aria-label="Tutup dialog">×</button><div id="dialog-content"></div></dialog>
   <div id="toast" role="status" aria-live="polite"></div>

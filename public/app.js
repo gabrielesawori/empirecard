@@ -5,6 +5,7 @@ import { createInterface, UPCOMING_HEROES } from './interface.js';
 import { createAccountUI } from './account-ui.js';
 import { createBgm } from './bgm.js';
 import { createSoundEffects, createMatchAudio } from './audio.js';
+import { boot as bootMotion, hydrate as hydrateMotion, castImpact, clearCast } from './motion.js';
 
 const $ = selector => document.querySelector(selector);
 const app = $('#app');
@@ -76,6 +77,8 @@ document.addEventListener('click', activateAudio);
 document.addEventListener('keydown', event => { if (!event.repeat) activateAudio(); });
 let state = null;
 let stream = null;
+let stateSignature = null;
+let stateSyncInFlight = false;
 let selectedSkill = null;
 let selectedUltimateType = null;
 let selectedTargetEnergyType = null;
@@ -95,8 +98,10 @@ function toast(message) {
 
 function connection(value, text) {
   connected = value;
-  $('.server-status').classList.toggle('offline', !value);
-  $('#connection-label').textContent = text || (value ? 'Arena online' : 'Menghubungkan ulang');
+  // Status decoration must never interrupt receipt of a game snapshot.
+  $('#connection-status')?.classList.toggle('offline', !value);
+  const label = $('#connection-label');
+  if (label) label.textContent = text || (value ? 'Arena online' : 'Menghubungkan ulang');
   const banner = $('#network-banner');
   if (banner) banner.hidden = value;
 }
@@ -119,28 +124,47 @@ async function api(route, body) {
 
 function acceptState(next) {
   if (state && state.code === next.code && next.version < state.version) return;
+  clockOffset = next.serverTime - Date.now();
+  const { serverTime, ...content } = next;
+  const signature = JSON.stringify(content);
+  // SSE and the action response can contain the same update. Keep the current
+  // DOM/animation instead of rebuilding it, while still synchronizing the clock.
+  if (signature === stateSignature) { state = next; return; }
+  stateSignature = signature;
   if (!state || state.round !== next.round || state.code !== next.code) { selectedSkill = null; selectedUltimateType = null; selectedTargetEnergyType = null; selectedRestoreEnergyType = null; }
   if (next.phase === 'finished' && state?.phase !== 'finished') refreshProfile();
   const newReveal = ['reveal', 'finished'].includes(next.phase) && state?.phase === 'countdown';
-  clockOffset = next.serverTime - Date.now();
   state = next;
   if (next.series?.settlement === 'saved') refreshProfile();
   matchAudio.observe(next);
   render();
-  if (newReveal) {
-    app.classList.add('just-revealed');
-    setTimeout(() => app.classList.remove('just-revealed'), 850);
-  }
+  if (newReveal) castImpact(app);
 }
 
 function subscribe() {
   stream?.close();
-  stream = new EventSource(`/api/events?session=${encodeURIComponent(token)}`);
-  stream.addEventListener('state', event => {
-    connection(true);
+  const source = new EventSource(`/api/events?session=${encodeURIComponent(token)}`);
+  stream = source;
+  source.addEventListener('state', event => {
+    if (stream !== source) return;
     acceptState(JSON.parse(event.data));
+    connection(true);
   });
-  stream.onerror = () => connection(false);
+  source.onerror = () => { if (stream === source) connection(false); };
+}
+
+async function syncCurrentState() {
+  if (!token || stateSyncInFlight) return;
+  const session = token;
+  stateSyncInFlight = true;
+  try {
+    const next = await api('state');
+    if (token !== session) return;
+    acceptState(next);
+    if (!stream || stream.readyState === EventSource.CLOSED) subscribe();
+  } catch (error) {
+    if (token === session && error.status === 401) { profile = null; resetSession(); toast(error.message); }
+  } finally { stateSyncInFlight = false; }
 }
 
 function resetSession() {
@@ -149,6 +173,7 @@ function resetSession() {
   stream = null;
   token = null;
   state = null;
+  stateSignature = null;
   selectedSkill = null;
   selectedUltimateType = null;
   selectedTargetEnergyType = null;
@@ -303,7 +328,7 @@ function battleSlot(player, mine) {
   const caption = entry ? OUTCOME_LABELS[entry.outcome] : skipped ? 'STUN · LEWATI BABAK' : player.locked ? 'TERKUNCI' : 'MEMILIH';
   let card = `<span class="empty-card-icon">◇</span><span>Letakkan<br>satu kartu skill</span>`;
   if (skipped) card = '<span class="empty-card-icon stun-symbol">ϟ</span><strong>STUN</strong><span>Tidak bisa<br>melakukan sweep</span>';
-  else if (skill) card = skillVisual(skill, skill.lastEnergyBonus && entry?.attack ? entry.attack : damageLabel(skill));
+  else if (skill) card = `<div class="cast-card"><div class="cast-face cast-front">${skillVisual(skill, skill.lastEnergyBonus && entry?.attack ? entry.attack : damageLabel(skill))}<span class="cast-trail" aria-hidden="true"><i></i></span></div><div class="cast-face cast-back" aria-hidden="true"><img src="${CARD_BACK}" alt=""></div><i class="cast-edge cast-edge-left" aria-hidden="true"></i><i class="cast-edge cast-edge-right" aria-hidden="true"></i><i class="cast-edge cast-edge-top" aria-hidden="true"></i><i class="cast-edge cast-edge-bottom" aria-hidden="true"></i></div><span class="cast-shadow" aria-hidden="true"></span><span class="cast-ring" aria-hidden="true"></span>`;
   else if (player.locked) card = `<img src="${CARD_BACK}" alt="Kartu skill tertutup"><span class="card-lock">${icon('lock')}</span>`;
   return `<div class="battle-slot ${player.locked && !skipped ? 'locked' : ''} ${skill ? 'revealed' : ''} ${entry?.outcome === 'countered' ? 'countered-card' : ''}">
     <div class="slot-label">${mine ? 'KARTUMU' : 'KARTU RIVAL'}<span>${skipped ? 'STUN' : skill ? SKILL_TYPES[skill.type].name.toUpperCase() : player.locked ? 'TERKUNCI' : 'MEMILIH'}</span></div>
@@ -363,6 +388,8 @@ function localProfile() {
 }
 
 function render() {
+  clearCast();
+  app.setAttribute('aria-busy', String(busy));
   const activeId = document.activeElement?.id;
   const selection = document.activeElement?.selectionStart;
   const currentProfile = localProfile();
@@ -386,6 +413,7 @@ function render() {
     field?.focus({ preventScroll: true });
     if (typeof selection === 'number') field?.setSelectionRange(selection, selection);
   }
+  hydrateMotion();
 }
 
 async function refreshProfile() {
@@ -646,19 +674,18 @@ document.addEventListener('click', async event => {
 });
 
 setInterval(updateClock, 100);
-setInterval(async () => {
-  if (!token || connected) return;
-  try {
-    acceptState(await api('state'));
-    // Initial loading can fail before EventSource exists. Restore the stream too.
-    if (!stream) subscribe();
-  }
-  catch (error) { if (error.status === 401) { profile = null; resetSession(); toast(error.message); } }
-}, 3000);
-document.addEventListener('visibilitychange', async () => {
+setInterval(() => {
+  if (!token || document.hidden) return;
+  const overdue = state?.deadline && Date.now() + clockOffset > state.deadline + 1000;
+  // A health-check success isn't proof that the match stream is alive. Recover
+  // disconnected streams and missed timer transitions without a page reload.
+  if (!stream || stream.readyState !== EventSource.OPEN || overdue) syncCurrentState();
+}, 1000);
+document.addEventListener('visibilitychange', () => {
   if (document.hidden || !token) return;
-  try { acceptState(await api('state')); } catch {}
+  syncCurrentState();
 });
+window.addEventListener('online', syncCurrentState);
 
 setInterval(async () => {
   if (!profile || document.hidden || busy) return;
@@ -667,6 +694,7 @@ setInterval(async () => {
 }, 8000);
 
 async function init() {
+  bootMotion();
   render();
   try {
     await api('health').then(() => connection(true)).catch(() => connection(false, 'Menyambungkan arena…'));

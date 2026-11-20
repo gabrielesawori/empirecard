@@ -11,7 +11,7 @@ import { createAccounts } from './lib/accounts.mjs';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.wav': 'audio/wav' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.wav': 'audio/wav' };
 
 export function createApp({ now = Date.now, random = Math.random, store = createStore(), requireAccounts = true, publicOrigin = null } = {}) {
   const accounts = createAccounts(store, now);
@@ -291,12 +291,23 @@ export function createApp({ now = Date.now, random = Math.random, store = create
         file = path.resolve(ROOT, `.${pathname}`);
         if (!file.startsWith(path.join(ROOT, 'assets') + path.sep)) throw new GameError('File tidak ditemukan.', 404);
       } else {
-        const allowed = { '/': 'index.html', '/index.html': 'index.html', '/app.js': 'app.js', '/styles.css': 'styles.css', '/hub.css': 'hub.css', '/interface.js': 'interface.js', '/bgm.js': 'bgm.js', '/audio.js': 'audio.js', '/heroes.js': 'heroes.js', '/spells.js': 'spells.js', '/ranks.js': 'ranks.js', '/account-ui.js': 'account-ui.js', '/app-shell.css': 'app-shell.css', '/favicon.svg': 'favicon.svg' };
+        const allowed = { '/': 'index.html', '/index.html': 'index.html', '/ads.txt': 'ads.txt', '/app.js': 'app.js', '/styles.css': 'styles.css', '/hub.css': 'hub.css', '/interface.js': 'interface.js', '/bgm.js': 'bgm.js', '/audio.js': 'audio.js', '/heroes.js': 'heroes.js', '/spells.js': 'spells.js', '/ranks.js': 'ranks.js', '/account-ui.js': 'account-ui.js', '/app-shell.css': 'app-shell.css', '/theme.css': 'theme.css', '/game.css': 'game.css', '/motion.js': 'motion.js', '/favicon.svg': 'favicon.svg' };
         if (!Object.hasOwn(allowed, pathname)) throw new GameError('File tidak ditemukan.', 404);
         file = path.join(ROOT, 'public', allowed[pathname]);
       }
       const metadata = await stat(file);
       if (!metadata.isFile()) throw new GameError('File tidak ditemukan.', 404);
+      if (file === path.join(ROOT, 'public', 'index.html')) {
+        const nonce = randomBytes(18).toString('base64');
+        const html = (await readFile(file, 'utf8')).replaceAll('{{CSP_NONCE}}', nonce);
+        // AdSense supports nonce-based strict CSP; a fixed domain allowlist can
+        // break as its resources change. Apply Google's policy only to the app
+        // document and preserve the existing policy on API/static responses.
+        // https://support.google.com/adsense/answer/16283098
+        res.setHeader('Content-Security-Policy', `object-src 'none'; script-src 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:; base-uri 'none'; frame-ancestors 'self'`);
+        res.writeHead(200, { 'Content-Type': MIME['.html'], 'Content-Length': Buffer.byteLength(html), 'Cache-Control': 'no-store' });
+        return res.end(req.method === 'HEAD' ? undefined : html);
+      }
       res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Content-Length': metadata.size, 'Cache-Control': pathname.startsWith('/assets/') ? 'public, max-age=86400' : 'no-cache' });
       res.end(req.method === 'HEAD' ? undefined : await readFile(file));
     } catch (error) {

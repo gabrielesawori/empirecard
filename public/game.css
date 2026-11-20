@@ -1,0 +1,647 @@
+/* Empire Card — "Arena Protocol" game layout layer.
+   Loaded after theme.css. Turns the web-dashboard shell into a modern
+   game-industry interface: full-bleed splash hero, HUD player rail,
+   horizontal roster carousel, angled panel geometry, bottom action dock.
+   Class names are additive; every data-page/data-action contract is intact. */
+
+/* ============================================================
+   1. SHELL: layered backdrop, HUD top bar, bottom dock
+   ============================================================ */
+
+/* Backdrop stack — vignette + scanlines + drifting light, all CSS only. */
+.arena-backdrop { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; }
+.arena-backdrop .backdrop-photo {
+  position: absolute; inset: -6% -4%;
+  background-size: cover; background-position: 50% 22%;
+  opacity: .16; filter: saturate(.7) contrast(1.05);
+  transform: translate3d(0, var(--parallax-y, 0px), 0) scale(1.08);
+  will-change: transform;
+}
+.arena-backdrop .backdrop-vignette {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% 0%, transparent 30%, rgba(4, 7, 12, .72) 78%),
+    linear-gradient(180deg, rgba(6, 9, 14, .55), rgba(6, 9, 14, .9));
+}
+.arena-backdrop .backdrop-scanlines {
+  position: absolute; inset: 0; opacity: .35; mix-blend-mode: overlay;
+  background: repeating-linear-gradient(180deg, rgba(190, 220, 235, .05) 0 1px, transparent 1px 3px);
+}
+.arena-backdrop .backdrop-grain {
+  position: absolute; inset: -50%; opacity: .05;
+  background-image: radial-gradient(rgba(255, 255, 255, .7) .5px, transparent .5px);
+  background-size: 4px 4px;
+  animation: grain-shift 6s steps(6) infinite;
+}
+.arena-backdrop .backdrop-glow {
+  position: absolute; width: 60vw; height: 60vw; border-radius: 50%;
+  filter: blur(120px); opacity: .2;
+  background: radial-gradient(circle, var(--teal), transparent 65%);
+  top: -18vw; left: -12vw;
+  animation: aurora-a 30s var(--ease-out) infinite alternate;
+}
+.arena-backdrop .backdrop-glow.alt {
+  background: radial-gradient(circle, var(--amber), transparent 65%);
+  top: auto; left: auto; bottom: -22vw; right: -14vw;
+  animation: aurora-b 38s var(--ease-out) infinite alternate;
+}
+
+/* Top HUD bar — replaces the plain web header with a game plate. */
+.hud-bar {
+  position: sticky; top: 0; z-index: 60;
+  display: flex; align-items: center; gap: 18px;
+  min-height: 62px; padding: 8px 26px;
+  border-bottom: 1px solid rgba(95, 208, 196, .14);
+  background: linear-gradient(180deg, rgba(8, 11, 17, .92), rgba(8, 11, 17, .55));
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+/* Angled accent edge under the HUD bar. */
+.hud-bar::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--teal) 22%, transparent 55%, var(--amber) 82%, transparent);
+  opacity: .5;
+}
+/* Scroll progress hairline. */
+.hud-progress {
+  position: absolute; left: 0; bottom: -1px; height: 2px; width: 100%;
+  transform-origin: 0 50%; transform: scaleX(0);
+  background: linear-gradient(90deg, var(--teal), var(--amber));
+  box-shadow: 0 0 10px rgba(95, 208, 196, .6);
+  z-index: 1;
+}
+.hud-bar .brand { flex-shrink: 0; }
+.hud-bar .brand img { filter: drop-shadow(0 0 10px rgba(95, 208, 196, .35)); }
+.hud-bar .brand span { font-size: 19px; letter-spacing: 3px; }
+
+/* HUD centre: quick nav with a sliding active indicator. */
+.hud-nav { display: flex; align-items: stretch; gap: 4px; margin: 0 auto; position: relative; }
+.hud-nav .nav-link {
+  position: relative; padding: 0 16px; min-height: 40px;
+  display: inline-flex; align-items: center;
+  font-size: 11px; letter-spacing: 1.1px; text-transform: uppercase;
+  color: var(--muted); border-radius: 8px;
+  transition: color var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out);
+}
+.hud-nav .nav-link:hover { color: var(--text); background: rgba(255, 255, 255, .04); }
+.hud-nav .nav-link.active { color: var(--text); background: rgba(95, 208, 196, .1); }
+/* Suppress the old underline — the dock/HUD uses a sliding pill instead. */
+.hud-nav .nav-link::after { display: none; }
+.hud-nav .nav-link.active::before {
+  content: ''; position: absolute; left: 14px; right: 14px; bottom: 3px; height: 2px;
+  border-radius: 2px; background: linear-gradient(90deg, var(--teal), var(--amber));
+  animation: nav-underline var(--dur) var(--ease-out);
+}
+
+/* HUD right cluster. */
+.hud-end { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.hud-coin {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 10px;
+  border: 1px solid rgba(226, 164, 78, .3);
+  background: linear-gradient(120deg, rgba(226, 164, 78, .12), rgba(226, 164, 78, .03));
+  color: var(--amber-soft);
+  transition: transform var(--dur) var(--ease-spring), box-shadow var(--dur);
+}
+.hud-coin:hover { transform: translateY(-2px); box-shadow: 0 0 18px rgba(226, 164, 78, .22); }
+.hud-coin .icon { width: 17px; }
+.hud-coin b { font-size: 12px; font-weight: 600; letter-spacing: .4px; }
+.hud-status {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 10px; letter-spacing: .6px; color: var(--muted);
+}
+.hud-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: signal-pulse 2.4s var(--ease-out) infinite; }
+.hud-status.offline i { background: var(--amber); }
+.hud-profile { padding: 0; }
+.hud-profile .profile-avatar { width: 38px; height: 38px; font-size: 18px; border-color: rgba(95, 208, 196, .4); }
+.hud-profile { transition: transform var(--dur) var(--ease-spring); }
+.hud-profile:hover { transform: translateY(-2px); }
+.hud-version {
+  font-size: 8px; letter-spacing: 1.4px; color: #6f7b8c;
+  border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px;
+}
+
+/* Bottom action dock — persistent game navigation. */
+.dock {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 70; display: none; align-items: center; gap: 4px;
+  padding: 8px; border-radius: 18px;
+  border: 1px solid rgba(95, 208, 196, .18);
+  background: rgba(10, 14, 21, .88);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--hairline), var(--lift-3);
+}
+.dock-button {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 62px; padding: 8px 6px; border-radius: 12px;
+  font-size: 9px; letter-spacing: .8px; color: var(--muted);
+  transition: color var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out), transform var(--dur) var(--ease-spring);
+}
+.dock-button .icon { width: 21px; height: 21px; }
+.dock-button:hover { color: var(--text); background: rgba(255, 255, 255, .05); transform: translateY(-3px); }
+.dock-button.active { color: var(--teal); background: rgba(95, 208, 196, .12); }
+.dock-button.active::after {
+  content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  width: 18px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--teal), var(--amber));
+}
+.dock-badge {
+  position: absolute; top: 3px; right: 10px; min-width: 16px; height: 16px; padding: 0 4px;
+  display: none; place-items: center; border-radius: 9px;
+  background: var(--amber); color: #1a1206; font-size: 9px; font-weight: 700;
+}
+.dock-button.has-badge .dock-badge { display: grid; }
+.dock-button.has-badge { color: var(--amber-soft); }
+
+/* ============================================================
+   2. CINEMATIC SPLASH HERO (home)
+   ============================================================ */
+.splash {
+  position: relative; isolation: isolate; overflow: hidden;
+  margin: 22px 0 30px; min-height: 560px;
+  border-radius: 22px;
+  border: 1px solid rgba(95, 208, 196, .16);
+  background: #080b12;
+  box-shadow: var(--hairline), var(--lift-3);
+  /* Angled corner cut — signature game-panel geometry. */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 34px), calc(100% - 34px) 100%, 0 100%);
+}
+.splash-art {
+  position: absolute; inset: 0; z-index: -2;
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%;
+  transform: translate3d(0, var(--parallax-y, 0px), 0) scale(1.1);
+  will-change: transform;
+}
+.splash::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(100deg, rgba(6, 9, 14, .96) 0%, rgba(6, 9, 14, .82) 38%, rgba(6, 9, 14, .25) 72%, rgba(6, 9, 14, .6) 100%),
+    linear-gradient(0deg, rgba(6, 9, 14, .96) 0%, transparent 55%);
+}
+/* Light sweep across the hero on load. */
+.splash::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(95, 208, 196, .1) 48%, transparent 62%);
+  animation: splash-sweep 1.5s var(--ease-out) .2s both;
+}
+.splash-body { position: relative; padding: 46px 48px 40px; max-width: 700px; }
+.splash-tags { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.splash-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 13px; border-radius: 20px;
+  border: 1px solid rgba(95, 208, 196, .3); background: rgba(95, 208, 196, .08);
+  font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: #b6e6e0;
+}
+.splash-chip i { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); animation: signal-pulse 2s var(--ease-out) infinite; }
+.splash h1 {
+  font-size: clamp(38px, 5.2vw, 68px); line-height: 1.02; letter-spacing: -1.6px;
+  margin: 0 0 16px;
+}
+.splash h1 em {
+  font-style: normal;
+  background: linear-gradient(100deg, var(--teal), var(--amber-soft));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.splash-lead { max-width: 430px; color: #a8b4c4; font-size: 13px; line-height: 1.85; }
+.splash-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 30px; }
+.splash-actions .menu-play {
+  min-width: 250px; min-height: 54px; font-size: 12px; letter-spacing: 1.2px; border-radius: 12px;
+}
+/* Hero portrait floating on the right of the splash. */
+.splash-portrait {
+  position: absolute; right: 5%; bottom: 0; z-index: -1;
+  height: 88%; width: auto; max-width: 42%;
+  object-fit: contain; object-position: bottom;
+  filter: drop-shadow(0 26px 50px rgba(0, 0, 0, .6));
+  animation: portrait-rise 1.1s var(--ease-out) both;
+}
+
+
+/* ============================================================
+   3. PLAYER HUD RAIL — rank/WP/winrate as a game stat plate
+   ============================================================ */
+.hud-rail {
+  display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, .8fr));
+  gap: 14px; margin: 0 0 26px;
+}
+.hud-card {
+  position: relative; overflow: hidden;
+  padding: 20px 22px; border-radius: 16px;
+  border: 1px solid rgba(95, 208, 196, .13);
+  background: linear-gradient(140deg, rgba(22, 30, 44, .92), rgba(11, 15, 23, .94));
+  box-shadow: var(--hairline), var(--lift-1);
+  transition: transform var(--dur) var(--ease-spring), border-color var(--dur), box-shadow var(--dur);
+}
+.hud-card:hover { transform: translateY(-3px); border-color: rgba(95, 208, 196, .34); box-shadow: var(--hairline), var(--lift-2); }
+/* Corner bracket accents — game HUD framing. */
+.hud-card::before,
+.hud-card::after {
+  content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  border-color: rgba(95, 208, 196, .45);
+}
+.hud-card::before { top: 8px; left: 8px; border-top: 1.5px solid; border-left: 1.5px solid; }
+.hud-card::after { bottom: 8px; right: 8px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
+.hud-card small { display: block; font-size: 8px; letter-spacing: 1.8px; text-transform: uppercase; color: #7f8b9c; }
+.hud-card strong { display: block; font-family: var(--serif); font-size: 25px; margin-top: 7px; color: var(--text); }
+.hud-card .hud-figure { display: flex; align-items: baseline; gap: 5px; margin-top: 7px; }
+.hud-card .hud-figure b { font-family: var(--serif); font-size: 30px; font-weight: 400; color: var(--amber-soft); }
+.hud-card .hud-figure span { font-size: 10px; letter-spacing: 1.2px; color: #7f8b9c; }
+.hud-card .icon { position: absolute; top: 18px; right: 18px; width: 24px; height: 24px; color: rgba(95, 208, 196, .5); }
+.hud-card.rail-rank { display: flex; align-items: center; gap: 18px; }
+.hud-card.rail-rank .rail-emblem {
+  position: relative; display: grid; place-items: center;
+  width: 60px; height: 60px; flex-shrink: 0; color: var(--teal);
+}
+.hud-card.rail-rank .rail-emblem::before {
+  content: ''; position: absolute; inset: 5px; border: 1px solid rgba(95, 208, 196, .35);
+  transform: rotate(45deg); background: rgba(95, 208, 196, .07);
+}
+.hud-card.rail-rank .rail-emblem .icon { position: static; width: 28px; height: 28px; color: inherit; }
+.hud-rail .rank-progress { margin-top: 12px; }
+.hud-rail .rank-progress .bar { height: 5px; border-radius: 4px; background: rgba(6, 9, 14, .8); }
+
+
+/* ============================================================
+   4. ROSTER CAROUSEL — horizontal snap-scrolling hero strip
+   ============================================================ */
+.roster { margin: 0 0 30px; }
+.roster-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 18px; margin-bottom: 14px;
+}
+.roster-head h2 { font-size: 26px; }
+.roster-head p { font-size: 11px; color: var(--muted); margin-top: 5px; }
+.roster-scroll {
+  display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 6px 4px 18px; margin: 0 -4px;
+  scrollbar-width: thin; scrollbar-color: rgba(95, 208, 196, .35) transparent;
+}
+.roster-scroll::-webkit-scrollbar { height: 6px; }
+.roster-scroll::-webkit-scrollbar-thumb { background: rgba(95, 208, 196, .3); border-radius: 4px; }
+.roster-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, .03); }
+.roster-card {
+  position: relative; flex: 0 0 auto; width: 208px; scroll-snap-align: start;
+  padding: 0; border-radius: 14px; overflow: hidden; text-align: left;
+  border: 1px solid rgba(95, 208, 196, .14);
+  background: #0d121c;
+  box-shadow: var(--hairline), var(--lift-1);
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.roster-card:hover { border-color: rgba(95, 208, 196, .5); box-shadow: var(--hairline), var(--lift-2), 0 0 26px rgba(95, 208, 196, .14); }
+.roster-card img { width: 100%; height: 236px; object-fit: cover; object-position: 50% 12%; display: block; }
+.roster-card .roster-meta {
+  padding: 13px 15px 15px; background: linear-gradient(180deg, rgba(13, 18, 28, .6), #0a0e16);
+}
+.roster-card .roster-meta strong { display: block; font-family: var(--serif); font-size: 17px; }
+.roster-card .roster-meta span { display: block; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; color: #7f8b9c; margin-top: 4px; }
+.roster-card .roster-rank {
+  position: absolute; top: 11px; left: 11px; z-index: 2;
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(8, 11, 17, .82); border: 1px solid rgba(95, 208, 196, .3);
+  font-family: var(--serif); font-size: 13px; color: var(--teal);
+}
+.roster-card .roster-stats {
+  position: absolute; top: 11px; right: 11px; z-index: 2;
+  display: flex; flex-direction: column; gap: 4px; align-items: flex-end;
+}
+.roster-card .roster-stats b {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 7px; font-size: 9px; font-weight: 600;
+  background: rgba(8, 11, 17, .82); border: 1px solid rgba(255, 255, 255, .1); color: #cfd8e4;
+}
+.roster-card .roster-stats .icon { width: 11px; height: 11px; }
+.roster-card.is-selected { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(95, 208, 196, .35), var(--lift-2); }
+.roster-card.is-selected::after {
+  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: linear-gradient(180deg, transparent 55%, rgba(95, 208, 196, .18));
+}
+.roster-card .roster-picked {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 4;
+  display: none; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase;
+  background: linear-gradient(90deg, var(--teal-deep), #1c5f6b); color: #eafcf9;
+}
+.roster-card.is-selected .roster-picked { display: flex; }
+.roster-card .roster-picked .icon { width: 12px; height: 12px; }
+/* Glare that follows the pointer (driven by motion.js tilt). */
+.roster-card .roster-glare {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 255, 255, .22), transparent 55%);
+  transition: opacity var(--dur) var(--ease-out);
+}
+.roster-card:hover .roster-glare { opacity: 1; }
+
+/* ============================================================
+   5. MISSION TILES — mode select as game menu cards
+   ============================================================ */
+.mission-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px; margin: 0 0 34px;
+}
+.mission-tile {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  min-height: 168px; padding: 22px 20px 18px; text-align: left;
+  border-radius: 16px; border: 1px solid rgba(95, 208, 196, .13);
+  background: linear-gradient(150deg, rgba(24, 33, 47, .94), rgba(10, 14, 21, .96));
+  box-shadow: var(--hairline), var(--lift-1);
+  transition: transform var(--dur) var(--ease-spring), border-color var(--dur) var(--ease-out), box-shadow var(--dur);
+}
+.mission-tile::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0;
+  background: radial-gradient(circle at 20% 0%, rgba(95, 208, 196, .16), transparent 60%);
+  transition: opacity var(--dur) var(--ease-out);
+}
+.mission-tile:hover { transform: translateY(-5px); border-color: rgba(95, 208, 196, .42); box-shadow: var(--hairline), var(--lift-2); }
+.mission-tile:hover::before { opacity: 1; }
+.mission-tile > .icon { width: 28px; height: 28px; color: var(--teal); }
+.mission-tile h3 { font-family: var(--serif); font-size: 20px; margin-top: 4px; }
+.mission-tile p { font-size: 10px; line-height: 1.7; color: #8c97a8; }
+.mission-tile .mission-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; margin-top: auto; padding-top: 13px;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+}
+.mission-tile .mission-foot small { font-size: 8px; letter-spacing: 1.4px; text-transform: uppercase; color: #9c9377; }
+.mission-tile .mission-foot .icon { width: 13px; height: 13px; color: var(--teal); }
+.mission-tile.mission-locked { opacity: .62; }
+.mission-tile.mission-locked:hover { transform: none; border-color: rgba(95, 208, 196, .13); }
+
+/* ============================================================
+   6. MOTION HELPERS — driven by motion.js
+   ============================================================ */
+[data-reveal] {
+  opacity: 0; transform: translateY(20px) scale(.985);
+  transition: opacity .62s var(--ease-out), transform .62s var(--ease-out);
+}
+[data-reveal].is-revealed { opacity: 1; transform: none; }
+
+[data-magnet] { transform: translate3d(var(--magnet-x, 0px), var(--magnet-y, 0px), 0); }
+
+.button, .menu-play, .mission-tile, .dock-button, .roster-card { position: relative; overflow: hidden; }
+.motion-ripple {
+  position: absolute; width: var(--ripple-size); height: var(--ripple-size);
+  border-radius: 50%; transform: translate(-50%, -50%) scale(0);
+  background: radial-gradient(circle, rgba(255, 255, 255, .3), transparent 70%);
+  pointer-events: none; animation: ripple-out .62s var(--ease-out) forwards;
+}
+
+/* ============================================================
+   7. KEYFRAMES
+   ============================================================ */
+@keyframes grain-shift {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-3%, 2%); }
+  40% { transform: translate(2%, -3%); }
+  60% { transform: translate(-2%, -2%); }
+  80% { transform: translate(3%, 1%); }
+}
+@keyframes nav-underline {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+@keyframes splash-sweep {
+  from { opacity: 0; transform: translateX(-40%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes portrait-rise {
+  from { opacity: 0; transform: translateY(38px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ripple-out {
+  to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+
+/* ---------- Card volume and landing choreography ---------- */
+@keyframes cast-open {
+  0% { transform: translate3d(0, 0, 0) rotateY(var(--cast-turn)); }
+  25% { transform: translate3d(0, var(--cast-prerise), 28px) rotateX(-18deg) rotateY(var(--cast-mid)); }
+  58% { transform: translate3d(0, var(--cast-rise), var(--cast-lift)) rotateX(12deg) rotateY(var(--cast-settle)); }
+  80% { transform: translate3d(0, 2px, 16px) rotateX(-4deg) rotateY(4deg); }
+  100% { transform: translate3d(0, 0, 0) rotateX(0) rotateY(0); }
+}
+@keyframes cast-shadow {
+  0%, 100% { transform: scaleX(1); opacity: .6; }
+  58% { transform: scaleX(.6); opacity: .2; }
+}
+@keyframes cast-ring {
+  0% { transform: rotateX(68deg) scale(.2); opacity: 0; }
+  20% { opacity: .8; }
+  100% { transform: rotateX(68deg) scale(1.5); opacity: 0; }
+}
+@keyframes cast-slash {
+  0% { transform: translateX(-260%) skewX(-19deg); opacity: 0; }
+  25% { opacity: .6; }
+  100% { transform: translateX(360%) skewX(-19deg); opacity: 0; }
+}
+@keyframes spark-fly {
+  from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--spark-x)), calc(-50% + var(--spark-y))) scale(.2); opacity: 0; }
+}
+
+/* ============================================================
+   8. RESPONSIVE — dock takes over from the HUD nav on small screens
+   ============================================================ */
+@media (max-width: 1080px) {
+  .hud-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hud-card.rail-rank { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) {
+  /* Swap top nav for the persistent dock on tablets and phones. */
+  .hud-nav { display: none; }
+  .dock { display: flex; }
+  main { padding-bottom: 108px; }
+  .splash { min-height: 460px; }
+  .splash-body { padding: 34px 30px 32px; }
+  .splash-portrait { right: -4%; height: 74%; max-width: 50%; opacity: .85; }
+}
+@media (max-width: 700px) {
+  .hud-bar { min-height: 56px; padding: 7px 16px; gap: 10px; }
+  .hud-bar .brand span { font-size: 16px; letter-spacing: 2px; }
+  .hud-version, .hud-status { display: none; }
+  .splash {
+    min-height: 0; border-radius: 16px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%);
+  }
+  .splash-portrait { position: relative; right: auto; bottom: auto; width: 100%; height: 220px; max-width: none; object-fit: cover; object-position: 50% 10%; margin-top: 8px; }
+  .splash-body { padding: 26px 20px 24px; }
+  .splash h1 { font-size: 34px; letter-spacing: -1px; }
+  .splash-lead { font-size: 12px; }
+  .splash-actions { flex-direction: column; align-items: stretch; gap: 12px; }
+  .splash-actions .menu-play { min-width: 0; width: 100%; }
+  .hud-rail { grid-template-columns: 1fr; gap: 10px; }
+  .hud-card { padding: 16px 18px; }
+  .hud-card strong { font-size: 21px; }
+  .roster-card { width: 168px; }
+  .roster-card img { height: 196px; }
+  .mission-grid { grid-template-columns: 1fr; }
+  .dock { bottom: 12px; gap: 2px; padding: 6px; border-radius: 15px; }
+  .dock-button { min-width: 54px; font-size: 8px; padding: 7px 4px; }
+  .dock-button .icon { width: 19px; height: 19px; }
+  .arena-backdrop .backdrop-grain { animation: none; }
+  .roster-card { transform: none; }
+}
+@media (max-width: 420px) {
+  .roster-scroll { gap: 12px; }
+  .roster-card { width: 150px; }
+  .roster-card img { height: 178px; }
+}
+
+/* ============================================================
+   9. ACCESSIBILITY — honour reduced motion for every new effect
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .arena-backdrop .backdrop-grain,
+  .arena-backdrop .backdrop-glow,
+  .splash::after,
+  .splash-portrait,
+  .hud-status i,
+  .splash-chip i {
+    animation: none !important;
+  }
+  [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; }
+  [data-magnet] { transform: none !important; }
+  .roster-card { transform: none !important; }
+  .motion-ripple { display: none; }
+  .arena-backdrop .backdrop-photo,
+  .splash-art { transform: scale(1.06) !important; }
+}
+
+
+
+/* ============================================================
+   10. LEGACY SHELL COMPATIBILITY
+   The old shell used .site-header/.header-end/.bottom-nav/.ambient.
+   Keep aliases for older markup. Connection updates use the stable
+   #connection-status ID independently of these presentation classes.
+   ============================================================ */
+.site-header { position: static; background: none; border: 0; backdrop-filter: none; max-width: none; height: auto; padding: 0; }
+.hud-end .header-end { display: flex; align-items: center; gap: 14px; }
+.hud-status.server-status { font-size: 10px; color: #8f9aac; display: inline-flex; gap: 8px; align-items: center; }
+.hud-coin.header-coin { color: var(--amber-soft); }
+.hud-profile.header-profile { padding: 0; }
+.hud-bar .version { margin: 0; }
+.bottom-nav { display: none !important; }
+/* The old blurred blobs are replaced by .arena-backdrop; hide them if present. */
+.ambient { display: none; }
+
+/* Old dashboard/menu containers are unused by the new home screen. */
+.app-menu, .app-shortcuts, .menu-destinations, .app-feature, .app-dashboard,
+.commander-panel, .menu-spotlight, .menu-layout, .app-welcome { display: none; }
+
+/* Notification dot stays available for the dock badge mirror. */
+.notification-dot {
+  position: absolute; top: 8px; right: 8px; min-width: 16px; height: 16px;
+  padding: 0 4px; display: grid; place-items: center; border-radius: 9px;
+  background: var(--amber); color: #1a1206; font-size: 9px; font-weight: 700;
+}
+
+/* ============================================================
+   11. SKILL CAST — front, back and four edges in a local 3D scene.
+   Keep filters, opacity and clipping off the volume's parent: those
+   grouping properties flatten preserve-3d. Artwork can be clipped per face.
+   https://developer.mozilla.org/en-US/docs/Web/CSS/transform-style
+   ============================================================ */
+.battle-board.battle-table { overflow: clip; }
+.battle-table .placed-card.face-up {
+  perspective: 780px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+  transform: none;
+  filter: none;
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+  border-color: transparent;
+  backface-visibility: visible;
+  animation: none;
+}
+.battle-slot {
+  --cast-turn: 180deg;
+  --cast-mid: 100deg;
+  --cast-settle: -18deg;
+  --cast-lift: 82px;
+  --cast-prerise: -6px;
+  --cast-rise: -12px;
+  --cast-duration: 1.3s;
+  --cast-color: var(--teal);
+}
+.rival-side .battle-slot {
+  --cast-turn: -180deg;
+  --cast-mid: -100deg;
+  --cast-settle: 18deg;
+  --cast-color: var(--amber);
+}
+.countered-card { --cast-lift: -28px; }
+.cast-card {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  transform: rotateY(0);
+}
+.cast-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 7px;
+  backface-visibility: hidden;
+  background: #101822;
+}
+.cast-front { transform: translateZ(2px); box-shadow: 0 0 0 1px var(--cast-color); }
+.cast-back { transform: rotateY(180deg) translateZ(2px); box-shadow: 0 0 0 1px #8e7758; }
+.cast-face > img, .cast-face > .live-skill-face { width: 100%; height: 100%; border-radius: inherit; }
+.cast-back > img { object-fit: fill; }
+.cast-edge {
+  position: absolute;
+  display: block;
+  background: linear-gradient(90deg, #493523, #d6ba81, #6f573b);
+  backface-visibility: hidden;
+}
+.cast-edge-left, .cast-edge-right { top: 0; width: 4px; height: 100%; }
+.cast-edge-left { left: -2px; transform: rotateY(-90deg); }
+.cast-edge-right { right: -2px; transform: rotateY(90deg); }
+.cast-edge-top, .cast-edge-bottom { left: 0; width: 100%; height: 4px; }
+.cast-edge-top { top: -2px; transform: rotateX(90deg); }
+.cast-edge-bottom { bottom: -2px; transform: rotateX(-90deg); }
+.cast-shadow {
+  position: absolute;
+  left: 8%; right: 8%; bottom: -8px; height: 14px;
+  border-radius: 50%;
+  background: #0009;
+  filter: blur(5px);
+  opacity: .6;
+  pointer-events: none;
+  transform: translateZ(-6px);
+}
+.cast-ring {
+  position: absolute;
+  width: 110%; height: 65%; left: -5%; bottom: -22%;
+  border: 2px solid var(--cast-color);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+.is-casting .cast-card { animation: cast-open var(--cast-duration) ease-in-out both; }
+.is-casting .cast-shadow { animation: cast-shadow var(--cast-duration) ease-in-out both; }
+.is-casting:not(.countered-card) .cast-ring { animation: cast-ring .65s ease-out .65s both; }
+.cast-trail { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.cast-trail i { position: absolute; top: -25%; left: 35%; width: 26%; height: 150%; background: linear-gradient(90deg, transparent, #d7fff4, transparent); opacity: 0; }
+.is-casting:not(.countered-card) .cast-trail i { animation: cast-slash .5s ease-out .65s both; }
+.cast-spark { position: absolute; left: 50%; top: 40%; width: 4px; height: 4px; border-radius: 50%; background: var(--cast-color); pointer-events: none; animation: spark-fly .55s ease-out both; }
+.hud-status.offline i { background: var(--amber); }
+@media (max-width: 700px) {
+  .battle-table .placed-card.face-up { perspective: 580px; }
+  .battle-slot { --cast-lift: 40px; --cast-prerise: 0px; --cast-rise: 0px; --cast-duration: 1.05s; }
+  .countered-card { --cast-lift: -14px; }
+  .is-casting:not(.countered-card) .cast-ring,
+  .is-casting:not(.countered-card) .cast-trail i { animation-delay: .52s; }
+  .cast-shadow { height: 9px; bottom: -5px; filter: blur(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cast-card, .cast-shadow, .cast-ring, .cast-trail i, .cast-spark { animation: none !important; }
+  .cast-ring, .cast-trail, .cast-spark { display: none; }
+}

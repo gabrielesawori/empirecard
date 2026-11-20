@@ -2,6 +2,14 @@
 
 Duel kartu simultan untuk dua pemain di browser. Menggunakan aset asli `assets/` dan konsep `concept/`. **Versi 0.7** menambahkan Genggar, Spearos, Karina, dan Newland; menyesuaikan buff/nerf hero serta spell; merahasiakan hero/spell di lobby; dan memperbarui poin serta tingkat rank. Akun, teman, chat, dan seri duel tetap tersedia. **Dua belas hero terbuka untuk pengujian, termasuk akun lama; koin dan toko belum melakukan transaksi atau memberi hadiah koin.**
 
+
+## Perbaikan versi 0.7.1
+
+- Status koneksi memakai ID yang tetap, sehingga perubahan kelas header tidak lagi memutus penanganan update SSE. Elemen status yang hilang juga tidak menghambat pertandingan.
+- Klien memulihkan stream yang terputus dan mengambil state server jika batas waktu babak sudah terlewat. Kembali ke tab atau jaringan yang online menyinkronkan pertandingan tanpa refresh manual.
+- Snapshot duplikat tidak membuat ulang arena atau memutar ulang animasi. Kartu skill memakai sisi depan/belakang, empat tepi, perspektif lokal, bayangan, dan efek benturan pada serangan berhasil. Efek dibersihkan saat tampilan berganti dan menghormati reduced motion.
+- Pengujian `node scripts/realtime-smoke.mjs` mencakup dua klien, indikator status yang hilang, stream terputus, update reveal yang hilang, animasi 3D desktop/ponsel, serta lanjut ke pertandingan berikutnya tanpa refresh.
+
 ## Jalankan
 
 Butuh **Node.js 22 atau lebih baru**. Satu dependency runtime: `pg` untuk opsi penyimpanan PostgreSQL.
@@ -160,6 +168,7 @@ node scripts/kristina-smoke.mjs
 node scripts/update-smoke.mjs
 node scripts/series-smoke.mjs
 node scripts/v07-smoke.mjs
+node scripts/realtime-smoke.mjs
 ```
 
 `CHROME_BIN` mengganti lokasi Chrome. Opsional `TEST_URL` mengarahkan tes browser umum ke server pengujian yang sudah berjalan; skrip akan membuat akun dan statistik pengujian di server tersebut. Gunakan server sementara/default untuk menghindari data uji pada akun nyata. Tes update memeriksa dua belas hero/enam spell, pilihan/loadout/reconnect, detail aset, counter/efek melalui UI dua klien, serta lebar 320/390/768/1024/1440 px. Tes seri menjalankan registrasi/login/logout, pertemanan dan undangan via UID, chat, ranked 2–0, penggantian hero/spell, audio per pertandingan, leaderboard, dan toko tanpa transaksi. Tes v0.7 memeriksa pilihan energi terpisah dan rahasia, cahaya Magic Shot 90 damage, Hypno, ultimate babak 9, maksimum DEF 100, medan sihir, cleanse Spearos, rift Karina dan Newland pada dua sisi. Screenshot disimpan di direktori sementara sistem.
@@ -175,6 +184,10 @@ public/interface.js Koleksi hero/spell, event dan setting
 public/account-ui.js Menu aplikasi, akun, rank, teman, chat dan toko
 public/ranks.js      Tingkatan rank dan progres WP
 public/app-shell.css Menu aplikasi dan arena ponsel
+public/theme.css    Lapisan tampilan modern: palet, animasi dan elevasi
+public/game.css     Tata letak game: splash, HUD rail, roster, dock, backdrop
+public/motion.js    Mesin animasi first-party (reveal, tilt, magnet, parallax, cast 3D)
+scripts/validate-syntax.mjs  Jalankan node --check per file, laporkan semua error
 public/hub.css      Tampilan menu/arena responsif
 public/bgm.js       Musik
 public/audio.js     Notifikasi audio per pemain
@@ -188,6 +201,25 @@ scripts/            Pengujian browser
 ```
 
 Server Node menyimpan room di memori, mengirim state melalui SSE, dan menerima aksi melalui HTTP. Restart menghapus room aktif, **bukan akun/teman/rank yang sudah tersimpan**. Akun dapat memulihkan room dari cookie login setelah refresh selama proses server dan room masih ada. Room token di `sessionStorage` terikat ke akun, sehingga token room saja tidak cukup untuk mengakses state. Putus koneksi tidak otomatis menyerah; timer berjalan di server. Room tanpa aksi tiga jam dibersihkan.
+
+
+## AdSense Auto ads
+
+Kode Auto ads untuk publisher `ca-pub-9942172564347932` dipasang satu kali di `<head>` melalui `public/index.html`, memakai `async` dan `crossorigin="anonymous"`. Navigasi dan pembaruan duel tidak memasang ulang script; game tidak menunggu iklan untuk mulai berjalan.
+
+`public/ads.txt` dilayani tanpa login pada `/ads.txt` dengan baris:
+
+```text
+google.com, pub-9942172564347932, DIRECT, f08c47fec0942fa0
+```
+
+HTML mendapat nonce acak baru per respons, dipakai bersama oleh script aplikasi dan AdSense. CSP dokumen mengikuti [panduan CSP resmi AdSense](https://support.google.com/adsense/answer/16283098), termasuk `strict-dynamic` dan kompatibilitas evaluasi script yang didokumentasikan Google. Kebijakan API dan berkas statis tetap seperti sebelumnya. HTML tidak di-cache agar nonce tidak digunakan ulang.
+
+Setelah deploy ke domain publik, periksa status **Ready** di **Sites** dan aktifkan **Auto ads** di **Ads**. Verifikasi `https://DOMAIN/ads.txt` menampilkan publisher yang benar. Status akun/domain dan penayangan iklan nyata tidak dapat ditentukan dari pemasangan kode lokal. Lihat [status situs AdSense](https://support.google.com/adsense/answer/12170222) dan [pengaturan Auto ads](https://support.google.com/adsense/answer/9261307).
+
+Gunakan preview AdSense untuk meninjau posisi iklan terhadap kartu, tombol kunci, dan dock ponsel. Format overlay (anchor/vignette) dan area yang dikecualikan diatur dari dashboard AdSense; pemasangan ini tidak membatasi penempatan otomatis ke menu saja. Rujukan: [format dan pengecualian Auto ads](https://support.google.com/adsense/answer/9305577).
+
+Pengujian browser mengganti loader iklan dengan script uji melalui intersepsi jaringan Chrome. Ini menguji CSP dan kelangsungan duel tanpa meminta atau mengeklik iklan nyata; penayangan iklan produksi tetap perlu diperiksa pada domain yang disetujui.
 
 ## Penyimpanan akun dan konfigurasi server
 
