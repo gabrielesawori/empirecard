@@ -103,7 +103,7 @@ try {
   await a.click('.dialog-close');
   for (const tab of [a, b]) {
     await tab.click('[data-action="leave"]'); await tab.click('[data-action="confirm-leave"]');
-    await tab.wait('document.querySelector(".menu-layout")');
+    await tab.wait('document.querySelector(".menu-play")');
   }
   assert.deepEqual(errors, []);
   console.log('PASS: 12 heroes, 6 spell cards, real assets, details, roster at 320/390/768/1024/1440px, loadout selection and persistence, lobby changes, private locks, Golar/Warfet duel, Retribution/Armor, Warfet HP protection, and spell progress on both clients.');

@@ -194,7 +194,7 @@ try {
   await b.click('[data-action="confirm-leave"]');
   await a.wait('document.querySelector(".result-screen")');
   assert.match(await a.evaluate('document.querySelector(".result-screen h1").textContent'), /menang/i);
-  await b.wait('document.querySelector(".menu-layout")');
+  await b.wait('document.querySelector(".menu-play")');
   await a.wait(`window.smokeEffects.filter(duration => Math.abs(duration - ${soundDurations.victory}) < 0.002).length === 2`);
   await b.wait(`window.smokeEffects.filter(duration => Math.abs(duration - ${soundDurations.defeat}) < 0.002).length === 2`);
   await a.click('[data-action="leave"]');

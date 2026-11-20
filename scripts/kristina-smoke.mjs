@@ -107,7 +107,7 @@ try {
     await tab.noOverflow();
     await tab.click('[data-action="leave"]');
     await tab.click('[data-action="confirm-leave"]');
-    await tab.wait('document.querySelector(".menu-layout")');
+    await tab.wait('document.querySelector(".menu-play")');
   }
   await a.click('.menu-play');
   await a.click('[data-action="training"]');

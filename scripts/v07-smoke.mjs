@@ -65,7 +65,7 @@ try {
   async function leave() {
     for (const tab of [a,b]) {
       await tab.click('[data-action="leave"]'); await tab.click('[data-action="confirm-leave"]');
-      await tab.wait('document.querySelector(".menu-layout")');
+      await tab.wait('document.querySelector(".menu-play")');
     }
   }
   await room('genggar','spearos');

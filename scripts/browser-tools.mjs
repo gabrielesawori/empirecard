@@ -48,6 +48,16 @@ export async function createBrowserSession(base = process.env.TEST_URL || 'http:
       }
       if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.exception?.description || message.params.exceptionDetails.text);
       if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') errors.push(message.params.entry.text);
+      // Browser regressions use a local stand-in, never live ad impressions.
+      // Interception still exercises the document's nonce/CORS/script loading.
+      if (message.method === 'Fetch.requestPaused') {
+        send('Fetch.fulfillRequest', {
+          requestId: message.params.requestId,
+          responseCode: 200,
+          responseHeaders: [{ name: 'Content-Type', value: 'text/javascript' }, { name: 'Access-Control-Allow-Origin', value: '*' }],
+          body: Buffer.from('window.adsenseTestLoads = (window.adsenseTestLoads || 0) + 1;').toString('base64'),
+        }, message.sessionId).catch(error => errors.push(error.message));
+      }
     }
   });
   function send(method, params = {}, sessionId) {
@@ -66,6 +76,7 @@ export async function createBrowserSession(base = process.env.TEST_URL || 'http:
     await send('Runtime.enable', {}, sessionId);
     await send('Log.enable', {}, sessionId);
     await send('Page.enable', {}, sessionId);
+    await send('Fetch.enable', { patterns: [{ urlPattern: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js*', requestStage: 'Request' }] }, sessionId);
     await send('Page.addScriptToEvaluateOnNewDocument', { source: `
       window.smokeEffects = JSON.parse(sessionStorage.getItem('smoke.effects') || '[]');
       const original = AudioContext.prototype.createBufferSource;
@@ -113,8 +124,8 @@ export async function createBrowserSession(base = process.env.TEST_URL || 'http:
       assert.equal(registered, true, 'Create isolated test account');
       await send('Page.reload', {}, sessionId);
     }
-    await wait(`document.querySelector('${register ? '.menu-layout' : '#account-form'}') && document.querySelector("#connection-label").textContent === "Arena online"`);
-    await wait('[...document.images].every(image => image.complete && image.naturalWidth > 0)');
+    await wait(`document.querySelector('${register ? '.menu-play' : '#account-form'}') && document.querySelector("#connection-label").textContent === "Arena online"`);
+    await wait('[...document.images].every(image => image.loading === "lazy" || image.complete && image.naturalWidth > 0)');
     return { evaluate, wait, click, fill, screenshot, noOverflow, sessionId };
   }
 

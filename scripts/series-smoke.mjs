@@ -21,7 +21,7 @@ try {
     await tab.click('[data-page="register"]');
     await tab.fill('#account-username',name); await tab.fill('#account-email',`${name}@example.test`); await tab.fill('#account-password','empire-test-password');
     await tab.click('#account-form button[type=submit]');
-    await tab.wait('document.querySelector(".menu-layout")');
+    await tab.wait('document.querySelector(".menu-play")');
     await tab.noOverflow();
   }
   assert.equal(await a.evaluate('document.cookie.includes("empire_account")'),false);
@@ -32,7 +32,7 @@ try {
   await b.click('[data-page="profile"]'); await b.click('[data-action="logout"]');
   await b.wait('document.querySelector("#account-form")');
   await b.fill('#account-email','Luna@example.test'); await b.fill('#account-password','empire-test-password');
-  await b.click('#account-form button[type=submit]'); await b.wait('document.querySelector(".menu-layout")');
+  await b.click('#account-form button[type=submit]'); await b.wait('document.querySelector(".menu-play")');
   assert.equal((await me(b)).uid,bProfile.uid);
   await a.click('[data-page="friends"]'); await a.fill('#friend-uid',bProfile.uid); await a.click('#friend-form button');
   await a.wait('document.querySelector("#friend-uid").value === ""');
@@ -100,7 +100,7 @@ try {
   assert.equal(await soundCount(a,'victory'),2); assert.equal(await soundCount(b,'defeat'),2);
   await send('Page.reload',{},a.sessionId); await a.wait('document.querySelector(".result-screen")');
   assert.equal((await me(a)).points,30); assert.equal(await soundCount(a,'victory'),2);
-  for (const tab of [a,b]) {await tab.click('[data-action="leave"]');await tab.click('[data-action="confirm-leave"]');await tab.wait('document.querySelector(".menu-layout")');}
+  for (const tab of [a,b]) {await tab.click('[data-action="leave"]');await tab.click('[data-action="confirm-leave"]');await tab.wait('document.querySelector(".menu-play")');}
   await a.click('[data-page="leaderboard"]'); await a.wait('document.querySelector(".leaderboard-entry")');
   assert.equal(await a.evaluate('document.querySelector(".leaderboard-entry strong").textContent'),'Astra');
   await a.screenshot('v06-leaderboard'); await a.noOverflow();
